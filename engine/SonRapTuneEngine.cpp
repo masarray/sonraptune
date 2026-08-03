@@ -16,6 +16,7 @@ void SonRapTuneEngine::prepare(const PrepareSpec& spec)
     voicedMask_.assign(static_cast<std::size_t>(spec_.maxBlockSize), 0.0f);
     detector_.prepare(spec_.sampleRate);
     trajectory_.prepare(spec_.sampleRate);
+    shifter_.prepare(spec_.sampleRate, spec_.maxBlockSize, spec_.channels);
     reset();
 }
 
@@ -25,6 +26,7 @@ void SonRapTuneEngine::reset() noexcept
     tracker_.reset();
     mapper_.reset();
     trajectory_.reset();
+    shifter_.reset();
     latestFrame_ = {};
     std::fill(analysisMono_.begin(), analysisMono_.end(), 0.0f);
     std::fill(ratio_.begin(), ratio_.end(), 1.0f);
@@ -34,7 +36,8 @@ void SonRapTuneEngine::reset() noexcept
 void SonRapTuneEngine::process(float* const* channels, int numChannels, int numSamples,
                               const std::bitset<128>& activeMidiNotes) noexcept
 {
-    if (channels == nullptr || numChannels <= 0 || numSamples <= 0) return;
+    if (channels == nullptr || numChannels <= 0 || numSamples <= 0)
+        return;
     numSamples = std::min(numSamples, spec_.maxBlockSize);
 
     for (int i = 0; i < numSamples; ++i) {
@@ -60,14 +63,23 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
         latestFrame_.state = tracked.state;
     }
 
-    if (!voicedMask_.empty()) voicedMask_[0] = numSamples > 0 ? voicedMask_[0] : 0.0f;
     trajectory_.render(ratio_.data(), voicedMask_.data(), numSamples, parameters_);
 
-    // Deliberate pass-through: E3/E4 will replace this with selected shifter candidate.
-    if (parameters_.bypass) return;
+    const float userMix = parameters_.bypass
+        ? 0.0f
+        : std::clamp(parameters_.mix, 0.0f, 1.0f);
+    for (int i = 0; i < numSamples; ++i)
+        voicedMask_[static_cast<std::size_t>(i)] *= userMix;
+
+    // The shifter always runs, including internal bypass, so dry and wet paths
+    // remain aligned to the latency reported to the host.
+    shifter_.process(channels, numChannels, numSamples,
+                     ratio_.data(), voicedMask_.data());
+
     const float gain = std::pow(10.0f, parameters_.outputTrimDb / 20.0f);
     for (int ch = 0; ch < numChannels; ++ch) {
-        if (channels[ch] == nullptr) continue;
+        if (channels[ch] == nullptr)
+            continue;
         for (int i = 0; i < numSamples; ++i)
             channels[ch][i] *= gain;
     }
