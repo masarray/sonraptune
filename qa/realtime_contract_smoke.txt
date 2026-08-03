@@ -1,0 +1,1 @@
+realtime_contract_smoke=PASS rates=3 block_sizes=6

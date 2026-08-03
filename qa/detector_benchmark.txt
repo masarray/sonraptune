@@ -1,0 +1,17 @@
+F0 70.00 Hz median_error_cents=0.02 frames=206
+F0 82.41 Hz median_error_cents=0.03 frames=206
+F0 98.00 Hz median_error_cents=0.03 frames=206
+F0 110.00 Hz median_error_cents=0.09 frames=206
+F0 146.83 Hz median_error_cents=0.11 frames=206
+F0 196.00 Hz median_error_cents=0.26 frames=206
+F0 220.00 Hz median_error_cents=0.13 frames=206
+F0 293.66 Hz median_error_cents=0.64 frames=206
+F0 440.00 Hz median_error_cents=1.76 frames=206
+F0 659.25 Hz median_error_cents=6.59 frames=206
+F0 880.00 Hz median_error_cents=4.46 frames=206
+{
+  "medianFinePitchErrorCents": 0.13,
+  "grossErrorRate": 0.00,
+  "voicedFrameRateAfterWarmup": 0.82,
+  "sampleRate": 48000
+}

@@ -1,0 +1,1 @@
+core_smoke=PASS target=62 midiTarget=67 finalRatio=1.02474
