@@ -25,10 +25,19 @@ if ($env:SONRAPTUNE_VERSION) {
     throw 'Could not determine SonRapTune version.'
 }
 
-Write-Host "Building SonRapTune $Version for Windows x64..." -ForegroundColor Cyan
+$cmakeHelp = (& cmake --help | Out-String)
+if ($cmakeHelp -match 'Visual Studio 18 2026') {
+    $Generator = 'Visual Studio 18 2026'
+} elseif ($cmakeHelp -match 'Visual Studio 17 2022') {
+    $Generator = 'Visual Studio 17 2022'
+} else {
+    throw 'Visual Studio 2026 or 2022 CMake generator was not found. Install Desktop development with C++.'
+}
+
+Write-Host "Building SonRapTune $Version for Windows x64 using $Generator..." -ForegroundColor Cyan
 
 cmake -S $Root -B $BuildDir `
-    -G 'Visual Studio 17 2022' -A x64 `
+    -G $Generator -A x64 `
     -DSONRAPTUNE_BUILD_PLUGIN=ON `
     -DSONRAPTUNE_BUILD_TESTS=ON
 if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
