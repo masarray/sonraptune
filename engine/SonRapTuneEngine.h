@@ -5,6 +5,7 @@
 #include "engine/tracking/CausalPitchTracker.h"
 #include "engine/mapping/ScaleMapper.h"
 #include "engine/correction/CorrectionTrajectory.h"
+#include "engine/shifting/DualHeadTimeDomainShifter.h"
 
 #include <array>
 #include <bitset>
@@ -18,11 +19,10 @@ public:
     void reset() noexcept;
     void setParameters(const RuntimeParameters& p) noexcept { parameters_ = p; }
 
-    // P0 analysis alpha: audio remains unchanged until a shifter candidate passes bake-off.
     void process(float* const* channels, int numChannels, int numSamples,
                  const std::bitset<128>& activeMidiNotes) noexcept;
 
-    int latencySamples() const noexcept { return 0; }
+    int latencySamples() const noexcept { return shifter_.latencySamples(); }
     const PitchFrame& latestFrame() const noexcept { return latestFrame_; }
 
 private:
@@ -32,6 +32,7 @@ private:
     CausalPitchTracker tracker_{};
     ScaleMapper mapper_{};
     CorrectionTrajectory trajectory_{};
+    DualHeadTimeDomainShifter shifter_{};
     PitchFrame latestFrame_{};
     std::vector<float> analysisMono_{};
     std::vector<float> ratio_{};
