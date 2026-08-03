@@ -19,6 +19,7 @@ add_library(SonRapTuneCore STATIC
     engine/shifting/DualHeadTimeDomainShifter.cpp
     engine/SonRapTuneEngine.cpp
 )
+set_target_properties(SonRapTuneCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(SonRapTuneCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(SonRapTuneCore PRIVATE
