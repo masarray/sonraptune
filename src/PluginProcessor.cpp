@@ -68,13 +68,19 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     juce::ScopedNoDenormals noDenormals;
     const auto totalIn = getTotalNumInputChannels();
     const auto totalOut = getTotalNumOutputChannels();
-    for (int ch = totalIn; ch < totalOut; ++ch) buffer.clear(ch, 0, buffer.getNumSamples());
+
+    if (totalIn == 1 && totalOut >= 2)
+        buffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
+    else
+        for (int ch = totalIn; ch < totalOut; ++ch)
+            buffer.clear(ch, 0, buffer.getNumSamples());
 
     applyMidi(midi);
     engine_.setParameters(snapshotParameters());
     std::array<float*, 2> channels{};
     const int channelCount = juce::jmin(2, buffer.getNumChannels());
-    for (int ch = 0; ch < channelCount; ++ch) channels[static_cast<std::size_t>(ch)] = buffer.getWritePointer(ch);
+    for (int ch = 0; ch < channelCount; ++ch)
+        channels[static_cast<std::size_t>(ch)] = buffer.getWritePointer(ch);
     engine_.process(channels.data(), channelCount, buffer.getNumSamples(), activeMidiNotes_);
 
     const auto& frame = engine_.latestFrame();
@@ -91,13 +97,15 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
 
 void PluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    if (auto xml = apvts.copyState().createXml()) copyXmlToBinary(*xml, destData);
+    if (auto xml = apvts.copyState().createXml())
+        copyXmlToBinary(*xml, destData);
 }
 
 void PluginProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
-        if (xml->hasTagName(apvts.state.getType())) apvts.replaceState(juce::ValueTree::fromXml(*xml));
+        if (xml->hasTagName(apvts.state.getType()))
+            apvts.replaceState(juce::ValueTree::fromXml(*xml));
     }
 }
 
