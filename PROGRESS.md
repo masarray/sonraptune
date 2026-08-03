@@ -55,6 +55,7 @@ Updated: 2026-08-04
 - [x] Ratio automation from correction trajectory
 - [x] Deterministic one-semitone frequency smoke test
 - [x] Finite and bounded output test
+- [x] No-allocation callback contract across 44.1/48/96 kHz and 32–1024 samples
 - [ ] True pitch-mark estimator
 - [ ] Period-synchronous grain extraction
 - [ ] Recorded-vocal quality and consonant tests
@@ -84,8 +85,9 @@ Candidate A makes tuning audible for engineering tests, but is not yet the final
 - [x] Windows single-click `build-windows.bat`
 - [x] Windows VST3 + Standalone ZIP
 - [x] Windows Inno Setup EXE installer
+- [x] Visual Studio 2026/2022 automatic generator detection
 - [x] macOS `build-macos.command`
-- [x] macOS VST3 + Standalone ZIP
+- [x] macOS Universal VST3 + Standalone ZIP
 - [x] macOS PKG installer with ad-hoc local signing
 - [x] Linux `build-linux.sh`
 - [x] Linux VST3 + Standalone tar.gz
@@ -100,7 +102,8 @@ Candidate A makes tuning audible for engineering tests, but is not yet the final
 - [x] Tag-driven `v*` release workflow
 - [x] Manual release dispatch with tag input
 - [x] GitHub Release publishing via official `gh` CLI
-- [ ] First successful three-platform CI run
+- [x] First successful three-platform CI run — run 15, commit `3f52fce`
+- [x] Windows, macOS, and Linux package artifacts verified
 - [ ] First published signed production release
 
 ## E6 — Bake-off and gate
@@ -108,11 +111,13 @@ Candidate A makes tuning audible for engineering tests, but is not yet the final
 - [ ] Batch render matrix
 - [ ] CSV/JSON metric reports
 - [ ] Blind listening renders
-- [ ] Callback deadline and allocation audit
+- [ ] Full callback deadline benchmark under host-like load
 - [ ] GO / ITERATE / STOP decision
 
 ## Current milestone
 
-**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, and E3 Candidate A audible with fixed reported latency. Cross-platform local build and release automation have been authored.
+**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, and E3 Candidate A audible with fixed reported latency. Single-click local builds and cross-platform release automation are operational.
 
-**Current release status:** engineering alpha. CI must pass on all three operating systems before merging this branch or publishing `v0.1.0`.
+**Validated:** Windows x64, macOS Universal, and Linux x64 all compiled VST3/Standalone, passed detector/core/realtime/shifter tests, produced installers and portable packages, and uploaded artifacts in GitHub Actions run 15.
+
+**Current release status:** engineering alpha suitable for local listening tests. Formant preservation, true period-synchronous TD-PSOLA, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
