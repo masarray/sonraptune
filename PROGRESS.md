@@ -6,69 +6,71 @@ Updated: 2026-08-04
 
 - [x] Dedicated `masarray/sonraptune` repository
 - [x] Source placed at repository root, not under `askp-vst`
-- [x] Production `askp-vst` master remains untouched
-- [x] P0 source and validation results migrated
-- [x] TDD added under `docs/`
+- [x] Production `askp-vst` remains untouched
+- [x] P0 source, TDD, and validation results migrated
 
 ## E0 — Foundation
 
-- [x] Independent SonRapTune project structure
-- [x] CMake C++17 core target
-- [x] Pinned JUCE 8.0.14 plugin configuration
-- [x] VST3 and Standalone target definitions
-- [x] MIDI input enabled in plugin metadata and processor
-- [x] Mono/stereo host bus compatibility rules
-- [x] APVTS parameter model and `SONRAPTUNE_STATE`
-- [x] Lock-free lossy pitch telemetry ring
-- [x] Fixed 128-note MIDI active-note state
-- [x] Analysis-only engine shell with honest passthrough output
-- [ ] JUCE VST3/Standalone binary compile verified in CI or Windows environment
-- [ ] Deterministic WAV offline renderer
-- [ ] GitHub Actions build workflow
+- [x] Independent C++17/CMake project
+- [x] Pinned JUCE 8.0.14
+- [x] VST3 and Standalone targets
+- [x] MIDI input and fixed 128-note state
+- [x] Mono/stereo host bus compatibility
+- [x] APVTS project state `SONRAPTUNE_STATE`
+- [x] Lock-free lossy pitch telemetry
+- [x] Host-reported shifter latency
+- [ ] Final custom user interface
 
 ## E1 — Analysis
 
-- [x] Full-rate input to ~12 kHz detector decimation
-- [x] Preallocated circular analysis history
-- [x] YIN-derived difference and CMNDF calculation
-- [x] Up to four local-minimum pitch candidates
-- [x] Parabolic lag interpolation
-- [x] Energy-aware confidence and basic onset indicator
-- [x] Causal four-beam pitch tracker
-- [x] Octave-jump penalty and voiced/unvoiced transition cost
-- [x] Synthetic harmonic-stack detector benchmark: 70–880 Hz, median 0.13 cent, gross error 0%
-- [ ] Full voicing feature set: spectral flatness, ZCR, HF ratio, noise-floor model
-- [ ] Recorded male/female rap dataset benchmark
+- [x] Full-rate input to approximately 12 kHz detector decimation
+- [x] Preallocated circular history
+- [x] YIN-derived CMNDF and four candidates
+- [x] Parabolic interpolation
+- [x] Causal four-beam tracker
+- [x] Octave-jump and voiced-transition penalties
+- [x] Synthetic 70–880 Hz benchmark: median 0.13 cent, gross error 0%
+- [ ] Spectral flatness, ZCR, HF ratio, and adaptive noise floor
+- [ ] Recorded male/female rap dataset
 - [ ] Flutter comparison against nearest-note baseline
 
 ## E2 — Mapping and trajectory
 
-- [x] Major, Natural Minor, Chromatic, and custom scale masks
-- [x] Key-relative nearest-note mapping
-- [x] Stability-based hysteresis and minimum note commitment
-- [x] Fixed-bitset MIDI nearest-note target
-- [x] Tune, Speed, Stability, and Feel foundation
-- [x] Sample-by-sample correction-ratio trajectory
-- [x] Deterministic mapping/trajectory smoke test
+- [x] Major, Natural Minor, Chromatic, and custom masks
+- [x] Key-relative scale mapping
+- [x] Stability hysteresis and note commitment
+- [x] Nearest active MIDI note
+- [x] Tune, Speed, Stability, and Feel trajectory
+- [x] Sample-by-sample correction ratio
 - [ ] End-note lock and phrase-aware release
-- [ ] Per-mode calibrated macro curves
-- [ ] Sample-offset MIDI event segmentation inside a block
+- [ ] Calibrated Natural, Modern Rap, Trap Lock, and Hook curves
+- [ ] Sample-offset MIDI event segmentation
 
-## E3 — TD-PSOLA candidate
+## E3 — Time-domain pitch-shifter candidates
 
-- [ ] Pitch-mark estimator
-- [ ] Period-synchronous grain scheduler
-- [ ] Voiced/unvoiced transition handling
-- [ ] Fixed latency and aligned dry path
-- [ ] Quality and CPU tests
+- [x] Candidate A: causal dual-read-head granular shifter
+- [x] Fixed latency: 20 ms grain + 6 ms base delay
+- [x] Latency-aligned dry and internal bypass
+- [x] Voiced wet-mask crossfade
+- [x] Ratio automation from correction trajectory
+- [x] Deterministic one-semitone frequency smoke test
+- [x] Finite and bounded output test
+- [x] No-allocation callback contract across 44.1/48/96 kHz and 32–1024 samples
+- [ ] True pitch-mark estimator
+- [ ] Period-synchronous grain extraction
+- [ ] Recorded-vocal quality and consonant tests
+- [ ] Latency/quality optimisation
+
+Candidate A makes tuning audible for engineering tests, but is not yet the final TD-PSOLA product engine.
 
 ## E4 — Phase-locked STFT candidate
 
 - [ ] STFT analysis/synthesis
-- [ ] Peak identity phase locking
+- [ ] Spectral peak detection
+- [ ] Identity phase locking
 - [ ] Ratio automation
 - [ ] Transient protection
-- [ ] Quality and CPU tests
+- [ ] Fixed latency and quality/CPU tests
 
 ## E5 — Formant and rap protection
 
@@ -76,25 +78,46 @@ Updated: 2026-08-04
 - [ ] LPC formant candidate
 - [ ] Cepstral formant candidate
 - [ ] Consonant/onset mask
-- [ ] Latency-aligned dry reintegration
+- [ ] Latency-aligned unvoiced reintegration
+
+## Cross-platform local build
+
+- [x] Windows single-click `build-windows.bat`
+- [x] Windows VST3 + Standalone ZIP
+- [x] Windows Inno Setup EXE installer
+- [x] Visual Studio 2026/2022 automatic generator detection
+- [x] macOS `build-macos.command`
+- [x] macOS Universal VST3 + Standalone ZIP
+- [x] macOS PKG installer with ad-hoc local signing
+- [x] Linux `build-linux.sh`
+- [x] Linux VST3 + Standalone tar.gz
+- [x] Linux DEB installer
+- [ ] Developer ID signing and notarisation for public macOS distribution
+- [ ] Windows Authenticode signing
+
+## Automation
+
+- [x] Build/test workflow for Windows, macOS, and Linux
+- [x] Package upload as workflow artifacts
+- [x] Tag-driven `v*` release workflow
+- [x] Manual release dispatch with tag input
+- [x] GitHub Release publishing via official `gh` CLI
+- [x] First successful three-platform CI run — run 15, commit `3f52fce`
+- [x] Windows, macOS, and Linux package artifacts verified
+- [ ] First published signed production release
 
 ## E6 — Bake-off and gate
 
 - [ ] Batch render matrix
 - [ ] CSV/JSON metric reports
 - [ ] Blind listening renders
-- [ ] Callback deadline and allocation audit
-- [ ] Final GO / ITERATE / STOP report
-
-## Latest validation
-
-- [x] Detector benchmark passes: median fine pitch error 0.13 cent
-- [x] Gross/octave error 0% on the current synthetic 70–880 Hz set
-- [x] Core mapping/trajectory smoke test passes
-- [x] Realtime-contract smoke test passes at 44.1/48/96 kHz and block sizes 32–1024
+- [ ] Full callback deadline benchmark under host-like load
+- [ ] GO / ITERATE / STOP decision
 
 ## Current milestone
 
-**Reached:** repository separation complete, E0 implementation foundation, E1 correctness prototype passing the first synthetic pitch gate, and the first half of E2.
+**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, and E3 Candidate A audible with fixed reported latency. Single-click local builds and cross-platform release automation are operational.
 
-**Audible tuning:** not yet active. The plugin remains passthrough by design until E3/E4 shifter candidates are implemented and compared.
+**Validated:** Windows x64, macOS Universal, and Linux x64 all compiled VST3/Standalone, passed detector/core/realtime/shifter tests, produced installers and portable packages, and uploaded artifacts in GitHub Actions run 15.
+
+**Current release status:** engineering alpha suitable for local listening tests. Formant preservation, true period-synchronous TD-PSOLA, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.

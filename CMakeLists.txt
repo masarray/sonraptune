@@ -1,21 +1,25 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SonRapTune VERSION 0.0.1 LANGUAGES CXX)
+project(SonRapTune VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(CTest)
+
 option(SONRAPTUNE_BUILD_PLUGIN "Build the JUCE VST3 and Standalone targets" ON)
-option(SONRAPTUNE_BUILD_TESTS "Build deterministic P0 tools" ON)
+option(SONRAPTUNE_BUILD_TESTS "Build deterministic P0/E3 tools" ON)
 
 add_library(SonRapTuneCore STATIC
     engine/analysis/YinCandidateDetector.cpp
     engine/tracking/CausalPitchTracker.cpp
     engine/mapping/ScaleMapper.cpp
     engine/correction/CorrectionTrajectory.cpp
+    engine/shifting/DualHeadTimeDomainShifter.cpp
     engine/SonRapTuneEngine.cpp
 )
+set_target_properties(SonRapTuneCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(SonRapTuneCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(SonRapTuneCore PRIVATE
@@ -32,6 +36,14 @@ if(SONRAPTUNE_BUILD_TESTS)
 
     add_executable(sonraptune_realtime_contract_smoke tools/realtime_contract_smoke.cpp)
     target_link_libraries(sonraptune_realtime_contract_smoke PRIVATE SonRapTuneCore)
+
+    add_executable(sonraptune_shifter_smoke tools/shifter_smoke.cpp)
+    target_link_libraries(sonraptune_shifter_smoke PRIVATE SonRapTuneCore)
+
+    add_test(NAME detector_benchmark COMMAND sonraptune_detector_benchmark)
+    add_test(NAME core_smoke COMMAND sonraptune_core_smoke)
+    add_test(NAME realtime_contract_smoke COMMAND sonraptune_realtime_contract_smoke)
+    add_test(NAME shifter_smoke COMMAND sonraptune_shifter_smoke)
 endif()
 
 if(SONRAPTUNE_BUILD_PLUGIN)
@@ -69,6 +81,7 @@ if(SONRAPTUNE_BUILD_PLUGIN)
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        SONRAPTUNE_VERSION_STRING="${PROJECT_VERSION}"
     )
     target_link_libraries(SonRapTune PRIVATE
         SonRapTuneCore
