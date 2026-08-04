@@ -42,6 +42,8 @@ Updated: 2026-08-04
 - [x] Nearest active MIDI note
 - [x] Tune, Speed, Stability, and Feel trajectory
 - [x] Sample-by-sample correction ratio
+- [x] Confidence used as a hysteretic voiced-state decision, not continuous dry/wet amount
+- [x] Dedicated voiced-path attack/release crossfade
 - [ ] End-note lock and phrase-aware release
 - [ ] Calibrated Natural, Modern Rap, Trap Lock, and Hook curves
 - [ ] Sample-offset MIDI event segmentation
@@ -67,20 +69,28 @@ Candidate A remains compiled and tested as the non-period-synchronous baseline.
 - [x] Two-period Hann grain extraction
 - [x] Normalised overlap-add for mono/stereo
 - [x] Ratio automation from the correction trajectory
-- [x] Fixed host latency: maximum 55 Hz period plus 8 ms scheduling margin
+- [x] Safe fixed host latency: two maximum 55 Hz periods plus 8 ms scheduling margin
 - [x] Latency-aligned dry and internal bypass
-- [x] Unity-ratio aligned-dry fast path
+- [x] Generation-tagged OLA slots prevent stale ring-buffer tails
+- [x] Realtime guard rejects writes to already-consumed output samples
+- [x] Continuous OLA coverage fade instead of hard dry/OLA switching
+- [x] Four-millisecond scheduler-ratio smoothing
+- [x] Smooth cents-domain unity transition with an 8 ms crossfade
 - [x] Fixed-capacity 128-mark history
 - [x] No-allocation callback contract across 44.1/48/96 kHz and 32–1024 samples
 - [x] Pitch-mark period test: 220 Hz error below 1 sample
 - [x] Synthetic shift matrix: 36/36 cases across 44.1/48/96 kHz, 90–440 Hz, ±1/±2 semitones
 - [x] Local matrix maximum absolute frequency error approximately 7.8 cents
+- [x] Harmonic quasi-vocal crackle regression with glide and voiced/unvoiced transitions
+- [x] Deterministic five-sample unity-crossing dry island eliminated
+- [x] P0 regression gate requires zero past-output grain writes and zero crackle-threshold violations
 - [ ] Recorded-vocal quality and consonant tests
 - [ ] Plosive, sibilant, and onset transition handling
+- [ ] Mix, output-trim, and external bypass automation smoothing audit
 - [ ] Latency/quality optimisation
 - [ ] Blind listening comparison against Candidate A
 
-Candidate B is now the active end-to-end engineering engine. Passing synthetic frequency tests validates causal scheduling and pitch movement, but does not prove production vocal quality.
+Candidate B remains the active engineering engine. Passing synthetic and harmonic-regression gates validates scheduling containment and continuity for the tested fixtures, but does not prove production vocal quality.
 
 ## E4 — Phase-locked STFT candidate
 
@@ -122,8 +132,9 @@ Candidate B is now the active end-to-end engineering engine. Passing synthetic f
 - [x] Manual release dispatch with tag input
 - [x] GitHub Release publishing via official `gh` CLI
 - [x] First successful three-platform CI run — run 15, commit `3f52fce`
-- [x] Windows, macOS, and Linux package artifacts verified
 - [x] Candidate B successful three-platform CI run — run 29, commit `a0afc31`
+- [x] P0 crackle-containment gate — run 45, six CTest targets passed on all three platforms
+- [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified for P0 containment
 - [ ] First published signed production release
 
 ## E6 — Bake-off and gate
@@ -136,8 +147,8 @@ Candidate B is now the active end-to-end engineering engine. Passing synthetic f
 
 ## Current milestone
 
-**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, Candidate A retained as baseline, and Candidate B period-synchronous overlap-add active in the engine and merged to `main`.
+**Reached:** P0 crackle containment merged to `main` in commit `adfabb9278f9879eeb5a652ea12410684f794791`. The deterministic paired crackles were traced to a hard aligned-dry bypass that became active for only five samples while the smoothed correction ratio crossed unity. It has been replaced by a continuous cents-domain transition.
 
-**Validated:** Candidate B pitch marks track a 220 Hz waveform within one sample. Its 36-case synthetic shift matrix passed across three sample rates, three source pitches, and four correction ratios with maximum absolute error around 7.8 cents. GitHub Actions run 29 compiled VST3/Standalone, passed all five CTest targets, produced installers, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
+**Validated:** GitHub Actions run 45 compiled VST3 and Standalone, passed all six CTest targets—including `crackle_smoke`—created installers, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64. The regression also exercises harmonic-rich quasi-vocal input, pitch glide, voiced/unvoiced transitions, alternating ±2-semitone correction, and realtime scheduling guards.
 
-**Current release status:** engineering alpha suitable for controlled local listening tests. Formant preservation, consonant/onset reintegration, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
+**Current release status:** engineering alpha for controlled local vocal listening. The reported deterministic crackle path is fixed in automated regression, but recorded male/female rap tests, consonant/onset protection, parameter-automation smoothing, formant preservation, and E4 phase-locked STFT remain open before any production audio-quality claim.
