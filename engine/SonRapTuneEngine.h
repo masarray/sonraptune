@@ -5,7 +5,7 @@
 #include "engine/tracking/CausalPitchTracker.h"
 #include "engine/mapping/ScaleMapper.h"
 #include "engine/correction/CorrectionTrajectory.h"
-#include "engine/shifting/DualHeadTimeDomainShifter.h"
+#include "engine/shifting/PeriodSynchronousTimeDomainShifter.h"
 
 #include <array>
 #include <bitset>
@@ -32,7 +32,7 @@ private:
     CausalPitchTracker tracker_{};
     ScaleMapper mapper_{};
     CorrectionTrajectory trajectory_{};
-    DualHeadTimeDomainShifter shifter_{};
+    PeriodSynchronousTimeDomainShifter shifter_{};
     PitchFrame latestFrame_{};
     std::vector<float> analysisMono_{};
     std::vector<float> ratio_{};
