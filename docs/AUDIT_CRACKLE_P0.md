@@ -44,9 +44,9 @@ The previous output switched immediately between aligned dry and PSOLA whenever 
 
 Containment:
 
-- OLA coverage has a meaningful minimum threshold;
-- coverage is converted to a smoothed crossfade;
-- under-covered samples fall back to aligned dry instead of dividing by a near-zero weight.
+- OLA coverage is mapped continuously to a 0–1 crossfade;
+- aligned dry remains the bounded fallback when OLA coverage is incomplete;
+- normalisation never divides by a near-zero weight and never uses a binary coverage threshold.
 
 ### 5. Fast scheduling-ratio movement
 
@@ -56,7 +56,24 @@ Containment:
 
 - Candidate B now applies an additional 4 ms scheduler-ratio smoother.
 
-## New regression gate
+### 6. Five-sample hard unity bypass
+
+The final deterministic paired crackle occurred while a downward correction crossed ratio 1.0. The shifter contained a transparent-unity shortcut that replaced the PSOLA path with aligned dry whenever the smoothed ratio entered a very narrow band around unity. The ratio remained inside that band for only five samples, creating a short dry island between two phase-different PSOLA waveform regions.
+
+The regression located the paired discontinuities at samples 144570 and 144575. They were repeatable across operating systems and occurred in the middle of a stable voiced phrase, not at a phrase boundary or ring-buffer wrap.
+
+Containment:
+
+- the hard unity shortcut was removed;
+- distance from unity is evaluated in cents;
+- below 0.5 cent the target is aligned dry;
+- above 4.5 cents the target is the processed path;
+- the region between those points uses smoothstep interpolation;
+- the unity mix follows its target with an 8 ms continuous smoother.
+
+This preserves near-unity transparency without inserting a sample-scale dry island.
+
+## Regression gate
 
 `crackle_smoke` renders a harmonic-rich quasi-vocal signal with:
 
@@ -65,7 +82,8 @@ Containment:
 - voiced/unvoiced phrase transitions;
 - deterministic breath/noise sections;
 - alternating +2 and -2 semitone correction;
-- smoothed wet transitions.
+- smoothed wet transitions;
+- correction trajectories that cross unity.
 
 The test fails when:
 
@@ -75,13 +93,24 @@ The test fails when:
 - an adjacent-sample discontinuity exceeds the crackle threshold;
 - voiced reliability transitions are not exercised.
 
+## Validation
+
+GitHub Actions run 45 passed all six CTest targets on:
+
+- Windows x64;
+- macOS Universal (`arm64` and `x86_64`);
+- Linux x64.
+
+Each runner also produced VST3, Standalone, installer, portable package, and uploaded artifacts. The validated code was squash-merged to `main` as commit `adfabb9278f9879eeb5a652ea12410684f794791`.
+
 ## Remaining risk
 
 This patch is containment, not final vocal-quality proof. Candidate B still needs:
 
+- recorded male/female rap fixtures and controlled listening tests;
 - correlation-based and sub-sample pitch marks;
 - plosive/sibilant/onset protection;
-- recorded male/female rap fixtures;
+- smoothing audit for Mix, output trim, and host-facing bypass automation;
 - spectral-discontinuity and modulation metrics;
 - blind listening against Candidate A and the future phase-locked STFT candidate;
 - formant preservation.
