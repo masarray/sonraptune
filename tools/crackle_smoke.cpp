@@ -38,6 +38,10 @@ int main()
     shifter.prepare(sampleRate, blockSize, 1);
 
     std::vector<float> rendered(static_cast<std::size_t>(sampleCount), 0.0f);
+    std::vector<float> ratioTrace(static_cast<std::size_t>(sampleCount), 1.0f);
+    std::vector<float> maskTrace(static_cast<std::size_t>(sampleCount), 0.0f);
+    std::vector<float> envelopeTrace(static_cast<std::size_t>(sampleCount), 0.0f);
+    std::vector<std::uint8_t> voicedTrace(static_cast<std::size_t>(sampleCount), 0u);
     std::vector<float> block(static_cast<std::size_t>(blockSize), 0.0f);
     std::vector<float> ratios(static_cast<std::size_t>(blockSize), 1.0f);
     std::vector<float> masks(static_cast<std::size_t>(blockSize), 0.0f);
@@ -111,6 +115,11 @@ int main()
                 : maskRelease;
             maskState += alpha * (maskTarget - maskState);
             masks[static_cast<std::size_t>(sample)] = maskState;
+
+            ratioTrace[static_cast<std::size_t>(absolute)] = ratioState;
+            maskTrace[static_cast<std::size_t>(absolute)] = maskState;
+            envelopeTrace[static_cast<std::size_t>(absolute)] = envelope;
+            voicedTrace[static_cast<std::size_t>(absolute)] = voiced ? 1u : 0u;
         }
 
         shifter.process(channels, 1, count, ratios.data(), masks.data());
@@ -123,7 +132,8 @@ int main()
     float maximumAbsolute = 0.0f;
     float maximumStep = 0.0f;
     int crackleSteps = 0;
-    const int analysisStart = shifter.latencySamples() + sampleRate / 10;
+    const int latency = shifter.latencySamples();
+    const int analysisStart = latency + sampleRate / 10;
     for (int sample = std::max(1, analysisStart);
          sample < sampleCount;
          ++sample) {
@@ -136,8 +146,30 @@ int main()
         maximumAbsolute = std::max(maximumAbsolute, std::abs(current));
         const float step = std::abs(current - previous);
         maximumStep = std::max(maximumStep, step);
-        if (step > 0.25f)
+        if (step > 0.25f) {
             ++crackleSteps;
+            const int sourceSample = std::max(0, sample - latency);
+            const float outputTime = static_cast<float>(sample)
+                / static_cast<float>(sampleRate);
+            const float sourceTime = static_cast<float>(sourceSample)
+                / static_cast<float>(sampleRate);
+            std::cerr << "CRACKLE sample=" << sample
+                      << " output_time=" << outputTime
+                      << " source_time=" << sourceTime
+                      << " source_local=" << std::fmod(sourceTime, 0.70f)
+                      << " previous=" << previous
+                      << " current=" << current
+                      << " step=" << step
+                      << " source_voiced="
+                      << static_cast<int>(voicedTrace[static_cast<std::size_t>(sourceSample)])
+                      << " source_envelope="
+                      << envelopeTrace[static_cast<std::size_t>(sourceSample)]
+                      << " requested_ratio="
+                      << ratioTrace[static_cast<std::size_t>(sample)]
+                      << " requested_mask="
+                      << maskTrace[static_cast<std::size_t>(sample)]
+                      << '\n';
+        }
     }
 
     const auto diagnostics = shifter.diagnostics();
