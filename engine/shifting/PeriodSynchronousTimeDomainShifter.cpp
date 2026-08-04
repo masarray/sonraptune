@@ -24,9 +24,6 @@ void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
     markEstimator_.prepare(sampleRate_);
     maxRadiusSamples_ = markEstimator_.maxPeriodSamples();
 
-    // A two-period grain spans sourceMark-radius through sourceMark+radius.
-    // The previous implementation reported only one maximum period of latency,
-    // which allowed low-frequency grains to write into samples already read.
     const int schedulingMargin = std::max(
         32, static_cast<int>(std::ceil(sampleRate_ * 0.008)));
     latencySamples_ = 2 * maxRadiusSamples_ + schedulingMargin;
@@ -79,6 +76,7 @@ void PeriodSynchronousTimeDomainShifter::clearVoicedState() noexcept
     pitchMarks_.fill(-1);
     pitchMarkWrite_ = 0;
     pitchMarkCount_ = 0;
+    nextSourceTime_ = -1.0;
     nextSynthesisTime_ = -1.0;
 }
 
@@ -138,8 +136,10 @@ void PeriodSynchronousTimeDomainShifter::commitPitchMark(
     pitchMarkWrite_ = (pitchMarkWrite_ + 1) % kMaxMarks;
     pitchMarkCount_ = std::min(kMaxMarks, pitchMarkCount_ + 1);
 
-    if (nextSynthesisTime_ < 0.0 && pitchMarkCount_ >= 2)
+    if (nextSourceTime_ < 0.0 && pitchMarkCount_ >= 2) {
+        nextSourceTime_ = static_cast<double>(mark);
         nextSynthesisTime_ = static_cast<double>(mark);
+    }
 }
 
 std::int64_t PeriodSynchronousTimeDomainShifter::nearestReadyPitchMark(
@@ -203,8 +203,12 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
     std::int64_t currentSample,
     float ratio) noexcept
 {
-    if (!sourceReliable_ || nextSynthesisTime_ < 0.0 || pitchMarkCount_ < 2)
+    if (!sourceReliable_
+        || nextSourceTime_ < 0.0
+        || nextSynthesisTime_ < 0.0
+        || pitchMarkCount_ < 2) {
         return;
+    }
 
     float sourcePeriod = markEstimator_.periodSamples();
     if (sourcePeriod <= 0.0f)
@@ -220,22 +224,27 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
         16,
         maxRadiusSamples_);
     const std::int64_t latestReadyMark = currentSample - radius - 2;
-    const double safeSynthesisTime = static_cast<double>(latestReadyMark);
 
     ratio = std::clamp(ratio, 0.5f, 2.0f);
     const double targetPeriod = static_cast<double>(sourcePeriod)
         / static_cast<double>(ratio);
 
+    // Analysis marks always move forward by the source period. Synthesis marks
+    // move by the target period. Using one clock for both caused repeated or
+    // skipped source grains whenever ratio != 1, producing large phase jumps.
     int guard = 0;
-    while (nextSynthesisTime_ <= safeSynthesisTime && guard++ < 8) {
+    while (nextSourceTime_ <= static_cast<double>(latestReadyMark)
+           && guard++ < 8) {
         const auto sourceMark = nearestReadyPitchMark(
-            nextSynthesisTime_, latestReadyMark);
+            nextSourceTime_, latestReadyMark);
         if (sourceMark < 0)
             break;
 
         const auto synthesisMark = static_cast<std::int64_t>(
             std::llround(nextSynthesisTime_)) + latencySamples_;
         scheduleGrain(sourceMark, synthesisMark, radius, currentSample);
+
+        nextSourceTime_ += static_cast<double>(sourcePeriod);
         nextSynthesisTime_ += targetPeriod;
     }
 }
