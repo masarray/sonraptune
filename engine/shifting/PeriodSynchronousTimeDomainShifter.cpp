@@ -6,6 +6,12 @@
 namespace sonraptune {
 namespace {
 constexpr float kPi = 3.14159265358979323846f;
+
+float smoothingAlpha(double sampleRate, double seconds) noexcept
+{
+    return 1.0f - std::exp(-1.0f
+        / static_cast<float>(std::max(1.0, sampleRate * seconds)));
+}
 }
 
 void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
@@ -18,12 +24,12 @@ void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
     markEstimator_.prepare(sampleRate_);
     maxRadiusSamples_ = markEstimator_.maxPeriodSamples();
 
-    // One maximum source-period look-ahead is required to capture a complete
-    // two-period grain. Eight milliseconds of scheduling margin keeps every
-    // overlap-add write ahead of the realtime read cursor.
+    // A two-period grain spans sourceMark-radius through sourceMark+radius.
+    // The previous implementation reported only one maximum period of latency,
+    // which allowed low-frequency grains to write into samples already read.
     const int schedulingMargin = std::max(
         32, static_cast<int>(std::ceil(sampleRate_ * 0.008)));
-    latencySamples_ = maxRadiusSamples_ + schedulingMargin;
+    latencySamples_ = 2 * maxRadiusSamples_ + schedulingMargin;
 
     ringSize_ = 1;
     while (ringSize_ < latencySamples_
@@ -39,6 +45,11 @@ void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
     for (auto& channel : outputSum_)
         channel.assign(static_cast<std::size_t>(ringSize_), 0.0f);
     outputWeight_.assign(static_cast<std::size_t>(ringSize_), 0.0f);
+    outputGeneration_.assign(static_cast<std::size_t>(ringSize_), 0u);
+
+    ratioSmoothingAlpha_ = smoothingAlpha(sampleRate_, 0.004);
+    coverageAttackAlpha_ = smoothingAlpha(sampleRate_, 0.006);
+    coverageReleaseAlpha_ = smoothingAlpha(sampleRate_, 0.003);
 
     reset();
 }
@@ -47,6 +58,11 @@ void PeriodSynchronousTimeDomainShifter::reset() noexcept
 {
     absoluteSample_ = 0;
     sourceReliable_ = false;
+    smoothedRatio_ = 1.0f;
+    coverageMix_ = 0.0f;
+    generation_ = 1;
+    diagnostics_ = {};
+
     markEstimator_.reset();
     clearVoicedState();
 
@@ -55,6 +71,7 @@ void PeriodSynchronousTimeDomainShifter::reset() noexcept
     for (auto& channel : outputSum_)
         std::fill(channel.begin(), channel.end(), 0.0f);
     std::fill(outputWeight_.begin(), outputWeight_.end(), 0.0f);
+    std::fill(outputGeneration_.begin(), outputGeneration_.end(), 0u);
 }
 
 void PeriodSynchronousTimeDomainShifter::clearVoicedState() noexcept
@@ -65,16 +82,29 @@ void PeriodSynchronousTimeDomainShifter::clearVoicedState() noexcept
     nextSynthesisTime_ = -1.0;
 }
 
+void PeriodSynchronousTimeDomainShifter::invalidateScheduledOutput() noexcept
+{
+    ++generation_;
+    if (generation_ == 0u) {
+        generation_ = 1u;
+        std::fill(outputGeneration_.begin(), outputGeneration_.end(), 0u);
+    }
+}
+
 void PeriodSynchronousTimeDomainShifter::setSourcePitch(float hz,
                                                          float confidence,
                                                          float voicing) noexcept
 {
-    const bool reliable = hz > 0.0f && confidence >= 0.15f && voicing >= 0.15f;
+    const bool canEnter = hz > 0.0f && confidence >= 0.60f && voicing >= 0.65f;
+    const bool canStay = hz > 0.0f && confidence >= 0.35f && voicing >= 0.40f;
+    const bool reliable = sourceReliable_ ? canStay : canEnter;
 
     if (reliable != sourceReliable_) {
+        sourceReliable_ = reliable;
+        ++diagnostics_.reliabilityTransitions;
         markEstimator_.reset();
         clearVoicedState();
-        sourceReliable_ = reliable;
+        invalidateScheduledOutput();
     }
 
     if (sourceReliable_)
@@ -137,16 +167,29 @@ std::int64_t PeriodSynchronousTimeDomainShifter::nearestReadyPitchMark(
 void PeriodSynchronousTimeDomainShifter::scheduleGrain(
     std::int64_t sourceMark,
     std::int64_t synthesisMark,
-    int radius) noexcept
+    int radius,
+    std::int64_t earliestOutputSample) noexcept
 {
     radius = std::clamp(radius, 16, maxRadiusSamples_);
     const float inverseRadius = 1.0f / static_cast<float>(radius);
 
     for (int offset = -radius; offset <= radius; ++offset) {
+        const auto outputSample = synthesisMark + offset;
+        if (outputSample < earliestOutputSample) {
+            ++diagnostics_.rejectedPastWrites;
+            continue;
+        }
+
         const float normalised = static_cast<float>(offset) * inverseRadius;
         const float window = 0.5f * (1.0f + std::cos(kPi * normalised));
-        const auto outputSample = synthesisMark + offset;
         const auto outputIndex = static_cast<std::size_t>(outputSample & ringMask_);
+
+        if (outputGeneration_[outputIndex] != generation_) {
+            outputGeneration_[outputIndex] = generation_;
+            outputWeight_[outputIndex] = 0.0f;
+            for (int channel = 0; channel < preparedChannels_; ++channel)
+                outputSum_[static_cast<std::size_t>(channel)][outputIndex] = 0.0f;
+        }
 
         outputWeight_[outputIndex] += window;
         for (int channel = 0; channel < preparedChannels_; ++channel) {
@@ -183,9 +226,6 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
     const double targetPeriod = static_cast<double>(sourcePeriod)
         / static_cast<double>(ratio);
 
-    // Under normal operation this loop schedules at most one grain per sample.
-    // The guard only handles a short catch-up after a block boundary or a rapid
-    // period change and keeps callback cost deterministically bounded.
     int guard = 0;
     while (nextSynthesisTime_ <= safeSynthesisTime && guard++ < 8) {
         const auto sourceMark = nearestReadyPitchMark(
@@ -195,7 +235,7 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
 
         const auto synthesisMark = static_cast<std::int64_t>(
             std::llround(nextSynthesisTime_)) + latencySamples_;
-        scheduleGrain(sourceMark, synthesisMark, radius);
+        scheduleGrain(sourceMark, synthesisMark, radius, currentSample);
         nextSynthesisTime_ += targetPeriod;
     }
 }
@@ -238,15 +278,33 @@ void PeriodSynchronousTimeDomainShifter::process(
             commitPitchMark(pitchMark);
         }
 
-        const float ratio = std::clamp(
+        const float requestedRatio = std::clamp(
             ratioPerSample[sample], 0.5f, 2.0f);
-        scheduleAvailableGrains(absoluteSample_, ratio);
+        smoothedRatio_ += ratioSmoothingAlpha_
+            * (requestedRatio - smoothedRatio_);
+        scheduleAvailableGrains(absoluteSample_, smoothedRatio_);
 
         const auto outputIndex = static_cast<std::size_t>(
             absoluteSample_ & ringMask_);
-        const float weight = outputWeight_[outputIndex];
-        const float wetMask = std::clamp(
+        const bool currentGeneration =
+            outputGeneration_[outputIndex] == generation_;
+        const float weight = currentGeneration
+            ? outputWeight_[outputIndex]
+            : 0.0f;
+
+        const float coverageTarget = sourceReliable_ && weight >= 0.20f
+            ? std::clamp((weight - 0.20f) / 0.60f, 0.0f, 1.0f)
+            : 0.0f;
+        const float coverageAlpha = coverageTarget > coverageMix_
+            ? coverageAttackAlpha_
+            : coverageReleaseAlpha_;
+        coverageMix_ += coverageAlpha * (coverageTarget - coverageMix_);
+
+        const float requestedWet = std::clamp(
             voicedMaskPerSample[sample], 0.0f, 1.0f);
+        const float effectiveWet = requestedWet * coverageMix_;
+        if (requestedWet > 0.5f && coverageTarget <= 0.0f)
+            ++diagnostics_.coverageFallbackSamples;
 
         for (int channel = 0; channel < numChannels; ++channel) {
             if (channels[channel] == nullptr)
@@ -254,22 +312,25 @@ void PeriodSynchronousTimeDomainShifter::process(
 
             const float alignedDry = readInput(
                 channel, absoluteSample_ - latencySamples_);
-            float shifted = weight > 0.0001f
-                ? outputSum_[static_cast<std::size_t>(channel)][outputIndex]
-                    / weight
-                : alignedDry;
+            float shifted = alignedDry;
+            if (currentGeneration && weight >= 0.20f) {
+                shifted = outputSum_[static_cast<std::size_t>(channel)][outputIndex]
+                    / weight;
+            }
 
-            // Unity correction must be bit-stable with the aligned dry path.
-            if (std::abs(ratio - 1.0f) < 0.0005f)
+            if (std::abs(smoothedRatio_ - 1.0f) < 0.0005f)
                 shifted = alignedDry;
 
             channels[channel][sample] = alignedDry
-                + wetMask * (shifted - alignedDry);
+                + effectiveWet * (shifted - alignedDry);
         }
 
-        for (int channel = 0; channel < preparedChannels_; ++channel)
-            outputSum_[static_cast<std::size_t>(channel)][outputIndex] = 0.0f;
-        outputWeight_[outputIndex] = 0.0f;
+        if (currentGeneration) {
+            for (int channel = 0; channel < preparedChannels_; ++channel)
+                outputSum_[static_cast<std::size_t>(channel)][outputIndex] = 0.0f;
+            outputWeight_[outputIndex] = 0.0f;
+            outputGeneration_[outputIndex] = 0u;
+        }
 
         ++absoluteSample_;
     }
