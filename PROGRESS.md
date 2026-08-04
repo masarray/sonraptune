@@ -48,20 +48,39 @@ Updated: 2026-08-04
 
 ## E3 — Time-domain pitch-shifter candidates
 
-- [x] Candidate A: causal dual-read-head granular shifter
+### Candidate A — fixed-duration baseline
+
+- [x] Causal dual-read-head granular shifter
 - [x] Fixed latency: 20 ms grain + 6 ms base delay
 - [x] Latency-aligned dry and internal bypass
 - [x] Voiced wet-mask crossfade
-- [x] Ratio automation from correction trajectory
 - [x] Deterministic one-semitone frequency smoke test
 - [x] Finite and bounded output test
-- [x] No-allocation callback contract across 44.1/48/96 kHz and 32–1024 samples
-- [ ] True pitch-mark estimator
-- [ ] Period-synchronous grain extraction
-- [ ] Recorded-vocal quality and consonant tests
-- [ ] Latency/quality optimisation
 
-Candidate A makes tuning audible for engineering tests, but is not yet the final TD-PSOLA product engine.
+Candidate A remains compiled and tested as the non-period-synchronous baseline.
+
+### Candidate B — period-synchronous overlap-add
+
+- [x] Detector-guided causal waveform pitch-mark estimator
+- [x] Positive-peak selection constrained to the tracked source period
+- [x] Period-synchronous synthesis-mark scheduler
+- [x] Two-period Hann grain extraction
+- [x] Normalised overlap-add for mono/stereo
+- [x] Ratio automation from the correction trajectory
+- [x] Fixed host latency: maximum 55 Hz period plus 8 ms scheduling margin
+- [x] Latency-aligned dry and internal bypass
+- [x] Unity-ratio aligned-dry fast path
+- [x] Fixed-capacity 128-mark history
+- [x] No-allocation callback contract across 44.1/48/96 kHz and 32–1024 samples
+- [x] Pitch-mark period test: 220 Hz error below 1 sample
+- [x] Synthetic shift matrix: 36/36 cases across 44.1/48/96 kHz, 90–440 Hz, ±1/±2 semitones
+- [x] Local matrix maximum absolute frequency error approximately 7.8 cents
+- [ ] Recorded-vocal quality and consonant tests
+- [ ] Plosive, sibilant, and onset transition handling
+- [ ] Latency/quality optimisation
+- [ ] Blind listening comparison against Candidate A
+
+Candidate B is now the active end-to-end engineering engine. Passing synthetic frequency tests validates causal scheduling and pitch movement, but does not prove production vocal quality.
 
 ## E4 — Phase-locked STFT candidate
 
@@ -104,6 +123,7 @@ Candidate A makes tuning audible for engineering tests, but is not yet the final
 - [x] GitHub Release publishing via official `gh` CLI
 - [x] First successful three-platform CI run — run 15, commit `3f52fce`
 - [x] Windows, macOS, and Linux package artifacts verified
+- [ ] Candidate B successful three-platform CI run
 - [ ] First published signed production release
 
 ## E6 — Bake-off and gate
@@ -116,8 +136,10 @@ Candidate A makes tuning audible for engineering tests, but is not yet the final
 
 ## Current milestone
 
-**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, and E3 Candidate A audible with fixed reported latency. Single-click local builds and cross-platform release automation are operational.
+**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, Candidate A retained as baseline, and Candidate B period-synchronous overlap-add active in the engine.
 
-**Validated:** Windows x64, macOS Universal, and Linux x64 all compiled VST3/Standalone, passed detector/core/realtime/shifter tests, produced installers and portable packages, and uploaded artifacts in GitHub Actions run 15.
+**Locally validated:** Candidate B pitch marks track a 220 Hz waveform within one sample. Its 36-case synthetic shift matrix passed across three sample rates, three source pitches, and four correction ratios with maximum absolute error around 7.8 cents.
 
-**Current release status:** engineering alpha suitable for local listening tests. Formant preservation, true period-synchronous TD-PSOLA, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
+**Pending gate:** Windows x64, macOS Universal, and Linux x64 must all compile VST3/Standalone, pass five CTest targets, produce installers, and upload artifacts before Candidate B is merged.
+
+**Current release status:** engineering alpha suitable for controlled local listening tests after CI passes. Formant preservation, consonant/onset reintegration, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
