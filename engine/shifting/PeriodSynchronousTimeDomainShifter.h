@@ -67,8 +67,10 @@ private:
     float ratioSmoothingAlpha_ = 1.0f;
     float coverageAttackAlpha_ = 1.0f;
     float coverageReleaseAlpha_ = 1.0f;
+    float unityMixAlpha_ = 1.0f;
     float smoothedRatio_ = 1.0f;
     float coverageMix_ = 0.0f;
+    float unityDryMix_ = 1.0f;
 
     std::int64_t absoluteSample_ = 0;
 
