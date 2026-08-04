@@ -85,6 +85,7 @@ private:
     std::array<std::int64_t, kMaxMarks> pitchMarks_{};
     int pitchMarkWrite_ = 0;
     int pitchMarkCount_ = 0;
+    double nextSourceTime_ = -1.0;
     double nextSynthesisTime_ = -1.0;
 
     Diagnostics diagnostics_{};
