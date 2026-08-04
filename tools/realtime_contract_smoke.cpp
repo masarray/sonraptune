@@ -58,8 +58,8 @@ int main()
 
             const int latency = engine.latencySamples();
             const int expectedLatency =
-                std::max(16, static_cast<int>(std::lround(rate * 0.006)))
-                + std::max(64, static_cast<int>(std::lround(rate * 0.020)));
+                static_cast<int>(std::ceil(rate / 55.0))
+                + std::max(32, static_cast<int>(std::ceil(rate * 0.008)));
             if (latency != expectedLatency || latency <= 0) {
                 std::cerr << "FAIL latency rate=" << rate
                           << " block=" << block
@@ -138,7 +138,7 @@ int main()
                 return 5;
             }
 
-            // Exercise the active detector/trajectory/shifter path after reset.
+            // Exercise the active detector/trajectory/PSOLA path after reset.
             engine.reset();
             parameters.bypass = false;
             parameters.tune = 1.0f;
@@ -169,6 +169,6 @@ int main()
     }
 
     std::cout << "realtime_contract_smoke=PASS rates=3 block_sizes=6 "
-                 "fixed_latency=verified allocations_in_process=0\n";
+                 "psola_fixed_latency=verified allocations_in_process=0\n";
     return 0;
 }

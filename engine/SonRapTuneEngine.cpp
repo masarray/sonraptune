@@ -71,6 +71,13 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
     for (int i = 0; i < numSamples; ++i)
         voicedMask_[static_cast<std::size_t>(i)] *= userMix;
 
+    // Candidate B uses the same detector/tracker estimate as the correction
+    // trajectory. Waveform pitch marks are then refined causally inside the
+    // shifter rather than scheduling fixed-duration grains.
+    shifter_.setSourcePitch(latestFrame_.detectedHz,
+                            latestFrame_.confidence,
+                            latestFrame_.voicing);
+
     // The shifter always runs, including internal bypass, so dry and wet paths
     // remain aligned to the latency reported to the host.
     shifter_.process(channels, numChannels, numSamples,

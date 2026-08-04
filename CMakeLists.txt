@@ -17,6 +17,8 @@ add_library(SonRapTuneCore STATIC
     engine/mapping/ScaleMapper.cpp
     engine/correction/CorrectionTrajectory.cpp
     engine/shifting/DualHeadTimeDomainShifter.cpp
+    engine/shifting/PitchMarkEstimator.cpp
+    engine/shifting/PeriodSynchronousTimeDomainShifter.cpp
     engine/SonRapTuneEngine.cpp
 )
 set_target_properties(SonRapTuneCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -40,10 +42,14 @@ if(SONRAPTUNE_BUILD_TESTS)
     add_executable(sonraptune_shifter_smoke tools/shifter_smoke.cpp)
     target_link_libraries(sonraptune_shifter_smoke PRIVATE SonRapTuneCore)
 
+    add_executable(sonraptune_psola_smoke tools/psola_smoke.cpp)
+    target_link_libraries(sonraptune_psola_smoke PRIVATE SonRapTuneCore)
+
     add_test(NAME detector_benchmark COMMAND sonraptune_detector_benchmark)
     add_test(NAME core_smoke COMMAND sonraptune_core_smoke)
     add_test(NAME realtime_contract_smoke COMMAND sonraptune_realtime_contract_smoke)
     add_test(NAME shifter_smoke COMMAND sonraptune_shifter_smoke)
+    add_test(NAME psola_smoke COMMAND sonraptune_psola_smoke)
 endif()
 
 if(SONRAPTUNE_BUILD_PLUGIN)
