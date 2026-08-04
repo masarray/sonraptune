@@ -53,6 +53,7 @@ void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
     ratioSmoothingAlpha_ = smoothingAlpha(sampleRate_, 0.004);
     coverageAttackAlpha_ = smoothingAlpha(sampleRate_, 0.006);
     coverageReleaseAlpha_ = smoothingAlpha(sampleRate_, 0.006);
+    unityMixAlpha_ = smoothingAlpha(sampleRate_, 0.008);
 
     reset();
 }
@@ -63,6 +64,7 @@ void PeriodSynchronousTimeDomainShifter::reset() noexcept
     sourceReliable_ = false;
     smoothedRatio_ = 1.0f;
     coverageMix_ = 0.0f;
+    unityDryMix_ = 1.0f;
     generation_ = 1;
     diagnostics_ = {};
 
@@ -290,9 +292,7 @@ void PeriodSynchronousTimeDomainShifter::process(
             : 0.0f;
 
         // There must be no binary switch between aligned dry and normalised
-        // OLA. A short dip around the old 0.20 threshold changed the waveform
-        // source twice within a few samples and produced the observed paired
-        // pretek/pretek. Hann coverage is now converted continuously to 0..1.
+        // OLA. Hann coverage is converted continuously to 0..1.
         constexpr float fullCoverageWeight = 0.75f;
         const float instantaneousCoverage = smoothStep01(
             weight / fullCoverageWeight);
@@ -308,6 +308,24 @@ void PeriodSynchronousTimeDomainShifter::process(
             * std::min(instantaneousCoverage, coverageMix_);
         if (requestedWet > 0.5f && instantaneousCoverage < 0.01f)
             ++diagnostics_.coverageFallbackSamples;
+
+        // The old implementation hard-switched to aligned dry whenever the
+        // smoothed ratio entered a tiny band around 1.0. During a downward
+        // correction crossing, that condition lasted only a handful of samples
+        // and inserted a five-sample dry island between two PSOLA waveforms,
+        // producing the deterministic paired crackles. Preserve transparency
+        // near unity with a cents-domain target and an 8 ms continuous fade.
+        const float ratioForLog = std::max(1.0e-6f, smoothedRatio_);
+        const float distanceFromUnityCents = std::abs(
+            1200.0f * std::log2(ratioForLog));
+        constexpr float unityFullDryCents = 0.5f;
+        constexpr float unityFullWetCents = 4.5f;
+        const float unityTransition = smoothStep01(
+            (distanceFromUnityCents - unityFullDryCents)
+            / (unityFullWetCents - unityFullDryCents));
+        const float unityDryTarget = 1.0f - unityTransition;
+        unityDryMix_ += unityMixAlpha_ * (unityDryTarget - unityDryMix_);
+        unityDryMix_ = std::clamp(unityDryMix_, 0.0f, 1.0f);
 
         for (int channel = 0; channel < numChannels; ++channel) {
             if (channels[channel] == nullptr)
@@ -326,11 +344,10 @@ void PeriodSynchronousTimeDomainShifter::process(
                     / weight;
             }
 
-            if (std::abs(smoothedRatio_ - 1.0f) < 0.0005f)
-                normalisedOla = alignedDry;
-
+            const float pitchPath = normalisedOla
+                + unityDryMix_ * (alignedDry - normalisedOla);
             channels[channel][sample] = alignedDry
-                + effectiveWet * (normalisedOla - alignedDry);
+                + effectiveWet * (pitchPath - alignedDry);
         }
 
         if (currentGeneration) {
