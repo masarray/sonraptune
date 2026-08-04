@@ -12,6 +12,12 @@ float smoothingAlpha(double sampleRate, double seconds) noexcept
     return 1.0f - std::exp(-1.0f
         / static_cast<float>(std::max(1.0, sampleRate * seconds)));
 }
+
+float smoothStep01(float value) noexcept
+{
+    value = std::clamp(value, 0.0f, 1.0f);
+    return value * value * (3.0f - 2.0f * value);
+}
 }
 
 void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
@@ -93,10 +99,9 @@ void PeriodSynchronousTimeDomainShifter::setSourcePitch(float hz,
         markEstimator_.reset();
         clearVoicedState();
 
-        // Do not invalidate grains that are already scheduled. They are
-        // windowed and must finish while coverageMix_ crossfades to aligned
-        // dry. Discarding them instantly created the audible pretek/pretek at
-        // voiced/unvoiced boundaries.
+        // Already scheduled Hann-windowed grains are allowed to finish. The
+        // requested wet mask and coverage envelope return the output to aligned
+        // dry without cutting an OLA tail at a non-zero waveform sample.
     }
 
     if (sourceReliable_)
@@ -218,9 +223,6 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
     const double targetPeriod = static_cast<double>(sourcePeriod)
         / static_cast<double>(ratio);
 
-    // The synthesis clock remains tied to elapsed stream time. At upward
-    // shifts it naturally reuses a nearby source grain; at downward shifts it
-    // skips source marks. This preserves duration while changing pitch.
     int guard = 0;
     while (nextSynthesisTime_ <= safeSynthesisTime && guard++ < 8) {
         const auto sourceMark = nearestReadyPitchMark(
@@ -284,21 +286,27 @@ void PeriodSynchronousTimeDomainShifter::process(
         const bool currentGeneration =
             outputGeneration_[outputIndex] == generation_;
         const float weight = currentGeneration
-            ? outputWeight_[outputIndex]
+            ? std::max(0.0f, outputWeight_[outputIndex])
             : 0.0f;
 
-        const float coverageTarget = weight >= 0.20f
-            ? std::clamp((weight - 0.20f) / 0.60f, 0.0f, 1.0f)
-            : 0.0f;
-        const float coverageAlpha = coverageTarget > coverageMix_
+        // There must be no binary switch between aligned dry and normalised
+        // OLA. A short dip around the old 0.20 threshold changed the waveform
+        // source twice within a few samples and produced the observed paired
+        // pretek/pretek. Hann coverage is now converted continuously to 0..1.
+        constexpr float fullCoverageWeight = 0.75f;
+        const float instantaneousCoverage = smoothStep01(
+            weight / fullCoverageWeight);
+        const float coverageAlpha = instantaneousCoverage > coverageMix_
             ? coverageAttackAlpha_
             : coverageReleaseAlpha_;
-        coverageMix_ += coverageAlpha * (coverageTarget - coverageMix_);
+        coverageMix_ += coverageAlpha
+            * (instantaneousCoverage - coverageMix_);
 
         const float requestedWet = std::clamp(
             voicedMaskPerSample[sample], 0.0f, 1.0f);
-        const float effectiveWet = requestedWet * coverageMix_;
-        if (requestedWet > 0.5f && coverageTarget <= 0.0f)
+        const float effectiveWet = requestedWet
+            * std::min(instantaneousCoverage, coverageMix_);
+        if (requestedWet > 0.5f && instantaneousCoverage < 0.01f)
             ++diagnostics_.coverageFallbackSamples;
 
         for (int channel = 0; channel < numChannels; ++channel) {
@@ -307,17 +315,22 @@ void PeriodSynchronousTimeDomainShifter::process(
 
             const float alignedDry = readInput(
                 channel, absoluteSample_ - latencySamples_);
-            float shifted = alignedDry;
-            if (currentGeneration && weight >= 0.20f) {
-                shifted = outputSum_[static_cast<std::size_t>(channel)][outputIndex]
+            float normalisedOla = alignedDry;
+            if (currentGeneration && weight > 1.0e-6f) {
+                // All OLA windows are non-negative, so this quotient is a
+                // bounded weighted average. Low-weight edge samples are faded
+                // continuously by instantaneousCoverage rather than selected
+                // through a hard threshold.
+                normalisedOla =
+                    outputSum_[static_cast<std::size_t>(channel)][outputIndex]
                     / weight;
             }
 
             if (std::abs(smoothedRatio_ - 1.0f) < 0.0005f)
-                shifted = alignedDry;
+                normalisedOla = alignedDry;
 
             channels[channel][sample] = alignedDry
-                + effectiveWet * (shifted - alignedDry);
+                + effectiveWet * (normalisedOla - alignedDry);
         }
 
         if (currentGeneration) {
