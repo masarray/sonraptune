@@ -46,7 +46,6 @@ private:
                     float value) noexcept;
 
     void clearVoicedState() noexcept;
-    void invalidateScheduledOutput() noexcept;
     void commitPitchMark(std::int64_t mark) noexcept;
     std::int64_t nearestReadyPitchMark(double sourceTime,
                                        std::int64_t latestReadyMark) const noexcept;
@@ -85,7 +84,6 @@ private:
     std::array<std::int64_t, kMaxMarks> pitchMarks_{};
     int pitchMarkWrite_ = 0;
     int pitchMarkCount_ = 0;
-    double nextSourceTime_ = -1.0;
     double nextSynthesisTime_ = -1.0;
 
     Diagnostics diagnostics_{};
