@@ -44,6 +44,7 @@ int main()
     tracked.midi = 66.5f;
     tracked.voicing = 1.0f;
     tracked.confidence = 1.0f;
+    tracked.state = PitchState::voicedStable;
     trajectory.setFrame(tracked, 67.0f, p);
     std::vector<float> ratio(512, 1.0f), mask(512, 0.0f);
     trajectory.render(ratio.data(), mask.data(), static_cast<int>(ratio.size()), p);
