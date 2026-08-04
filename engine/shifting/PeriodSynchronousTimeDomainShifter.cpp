@@ -46,7 +46,7 @@ void PeriodSynchronousTimeDomainShifter::prepare(double sampleRate,
 
     ratioSmoothingAlpha_ = smoothingAlpha(sampleRate_, 0.004);
     coverageAttackAlpha_ = smoothingAlpha(sampleRate_, 0.006);
-    coverageReleaseAlpha_ = smoothingAlpha(sampleRate_, 0.003);
+    coverageReleaseAlpha_ = smoothingAlpha(sampleRate_, 0.006);
 
     reset();
 }
@@ -76,17 +76,7 @@ void PeriodSynchronousTimeDomainShifter::clearVoicedState() noexcept
     pitchMarks_.fill(-1);
     pitchMarkWrite_ = 0;
     pitchMarkCount_ = 0;
-    nextSourceTime_ = -1.0;
     nextSynthesisTime_ = -1.0;
-}
-
-void PeriodSynchronousTimeDomainShifter::invalidateScheduledOutput() noexcept
-{
-    ++generation_;
-    if (generation_ == 0u) {
-        generation_ = 1u;
-        std::fill(outputGeneration_.begin(), outputGeneration_.end(), 0u);
-    }
 }
 
 void PeriodSynchronousTimeDomainShifter::setSourcePitch(float hz,
@@ -102,7 +92,11 @@ void PeriodSynchronousTimeDomainShifter::setSourcePitch(float hz,
         ++diagnostics_.reliabilityTransitions;
         markEstimator_.reset();
         clearVoicedState();
-        invalidateScheduledOutput();
+
+        // Do not invalidate grains that are already scheduled. They are
+        // windowed and must finish while coverageMix_ crossfades to aligned
+        // dry. Discarding them instantly created the audible pretek/pretek at
+        // voiced/unvoiced boundaries.
     }
 
     if (sourceReliable_)
@@ -136,10 +130,8 @@ void PeriodSynchronousTimeDomainShifter::commitPitchMark(
     pitchMarkWrite_ = (pitchMarkWrite_ + 1) % kMaxMarks;
     pitchMarkCount_ = std::min(kMaxMarks, pitchMarkCount_ + 1);
 
-    if (nextSourceTime_ < 0.0 && pitchMarkCount_ >= 2) {
-        nextSourceTime_ = static_cast<double>(mark);
+    if (nextSynthesisTime_ < 0.0 && pitchMarkCount_ >= 2)
         nextSynthesisTime_ = static_cast<double>(mark);
-    }
 }
 
 std::int64_t PeriodSynchronousTimeDomainShifter::nearestReadyPitchMark(
@@ -203,12 +195,8 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
     std::int64_t currentSample,
     float ratio) noexcept
 {
-    if (!sourceReliable_
-        || nextSourceTime_ < 0.0
-        || nextSynthesisTime_ < 0.0
-        || pitchMarkCount_ < 2) {
+    if (!sourceReliable_ || nextSynthesisTime_ < 0.0 || pitchMarkCount_ < 2)
         return;
-    }
 
     float sourcePeriod = markEstimator_.periodSamples();
     if (sourcePeriod <= 0.0f)
@@ -224,27 +212,25 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
         16,
         maxRadiusSamples_);
     const std::int64_t latestReadyMark = currentSample - radius - 2;
+    const double safeSynthesisTime = static_cast<double>(latestReadyMark);
 
     ratio = std::clamp(ratio, 0.5f, 2.0f);
     const double targetPeriod = static_cast<double>(sourcePeriod)
         / static_cast<double>(ratio);
 
-    // Analysis marks always move forward by the source period. Synthesis marks
-    // move by the target period. Using one clock for both caused repeated or
-    // skipped source grains whenever ratio != 1, producing large phase jumps.
+    // The synthesis clock remains tied to elapsed stream time. At upward
+    // shifts it naturally reuses a nearby source grain; at downward shifts it
+    // skips source marks. This preserves duration while changing pitch.
     int guard = 0;
-    while (nextSourceTime_ <= static_cast<double>(latestReadyMark)
-           && guard++ < 8) {
+    while (nextSynthesisTime_ <= safeSynthesisTime && guard++ < 8) {
         const auto sourceMark = nearestReadyPitchMark(
-            nextSourceTime_, latestReadyMark);
+            nextSynthesisTime_, latestReadyMark);
         if (sourceMark < 0)
             break;
 
         const auto synthesisMark = static_cast<std::int64_t>(
             std::llround(nextSynthesisTime_)) + latencySamples_;
         scheduleGrain(sourceMark, synthesisMark, radius, currentSample);
-
-        nextSourceTime_ += static_cast<double>(sourcePeriod);
         nextSynthesisTime_ += targetPeriod;
     }
 }
@@ -301,7 +287,7 @@ void PeriodSynchronousTimeDomainShifter::process(
             ? outputWeight_[outputIndex]
             : 0.0f;
 
-        const float coverageTarget = sourceReliable_ && weight >= 0.20f
+        const float coverageTarget = weight >= 0.20f
             ? std::clamp((weight - 0.20f) / 0.60f, 0.0f, 1.0f)
             : 0.0f;
         const float coverageAlpha = coverageTarget > coverageMix_
