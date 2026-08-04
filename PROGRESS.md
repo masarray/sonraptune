@@ -123,7 +123,7 @@ Candidate B is now the active end-to-end engineering engine. Passing synthetic f
 - [x] GitHub Release publishing via official `gh` CLI
 - [x] First successful three-platform CI run — run 15, commit `3f52fce`
 - [x] Windows, macOS, and Linux package artifacts verified
-- [ ] Candidate B successful three-platform CI run
+- [x] Candidate B successful three-platform CI run — run 29, commit `a0afc31`
 - [ ] First published signed production release
 
 ## E6 — Bake-off and gate
@@ -136,10 +136,8 @@ Candidate B is now the active end-to-end engineering engine. Passing synthetic f
 
 ## Current milestone
 
-**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, Candidate A retained as baseline, and Candidate B period-synchronous overlap-add active in the engine.
+**Reached:** E0 complete, E1 synthetic correctness gate passed, E2 foundation active, Candidate A retained as baseline, and Candidate B period-synchronous overlap-add active in the engine and merged to `main`.
 
-**Locally validated:** Candidate B pitch marks track a 220 Hz waveform within one sample. Its 36-case synthetic shift matrix passed across three sample rates, three source pitches, and four correction ratios with maximum absolute error around 7.8 cents.
+**Validated:** Candidate B pitch marks track a 220 Hz waveform within one sample. Its 36-case synthetic shift matrix passed across three sample rates, three source pitches, and four correction ratios with maximum absolute error around 7.8 cents. GitHub Actions run 29 compiled VST3/Standalone, passed all five CTest targets, produced installers, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
 
-**Pending gate:** Windows x64, macOS Universal, and Linux x64 must all compile VST3/Standalone, pass five CTest targets, produce installers, and upload artifacts before Candidate B is merged.
-
-**Current release status:** engineering alpha suitable for controlled local listening tests after CI passes. Formant preservation, consonant/onset reintegration, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
+**Current release status:** engineering alpha suitable for controlled local listening tests. Formant preservation, consonant/onset reintegration, recorded-vocal evaluation, and E4 phase-locked STFT remain open before a production audio-quality claim.
