@@ -84,6 +84,8 @@ if(SONRAPTUNE_BUILD_PLUGIN)
 
     target_sources(SonRapTune PRIVATE
         src/PluginProcessor.cpp
+        src/PluginEditor.cpp
+        src/PluginEditor.h
         src/ParameterLayout.cpp
     )
     target_include_directories(SonRapTune PRIVATE engine src)

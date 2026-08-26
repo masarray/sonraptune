@@ -1,4 +1,5 @@
 #include "src/PluginProcessor.h"
+#include "src/PluginEditor.h"
 
 namespace sonraptune {
 
@@ -92,7 +93,7 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new PluginEditor(*this);
 }
 
 void PluginProcessor::getStateInformation(juce::MemoryBlock& destData)
