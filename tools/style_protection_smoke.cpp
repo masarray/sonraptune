@@ -1,4 +1,5 @@
 #include "engine/correction/CorrectionTrajectory.h"
+#include "engine/mapping/ScaleMapper.h"
 #include "engine/protection/ConsonantProtection.h"
 #include "engine/shifting/PeriodSynchronousTimeDomainShifter.h"
 
@@ -6,7 +7,6 @@
 #include <array>
 #include <cmath>
 #include <iostream>
-#include <vector>
 
 namespace {
 constexpr double kSampleRate = 48000.0;
@@ -49,8 +49,6 @@ float protectionAverage(bool noisy)
 
     for (int i = 0; i < n; ++i) {
         if (noisy) {
-            // Deterministic high-zero-crossing fixture, representative of the
-            // feature pattern produced by sibilant/noisy material.
             mono[static_cast<std::size_t>(i)] = (i & 1) == 0 ? 0.35f : -0.35f;
         } else {
             mono[static_cast<std::size_t>(i)] = 0.35f * std::sin(
@@ -106,6 +104,21 @@ int grainRadius(float formantAmount)
     return shifter.diagnostics().lastGrainRadius;
 }
 
+bool customScaleWorks()
+{
+    sonraptune::RuntimeParameters p;
+    p.key = 0;
+    p.scale = sonraptune::ScaleType::customMask;
+    p.customMask = static_cast<std::uint16_t>((1u << 0) | (1u << 7));
+
+    sonraptune::ScaleMapper mapper;
+    const float first = mapper.map(66.7f, true, p);
+    mapper.reset();
+    p.customMask = 1u << 0;
+    const float second = mapper.map(66.7f, true, p);
+    return std::lround(first) == 67 && std::lround(second) == 72;
+}
+
 } // namespace
 
 int main()
@@ -135,6 +148,11 @@ int main()
         std::cerr << "formant control did not change grain geometry: preserve="
                   << preservedRadius << " coupled=" << coupledRadius << '\n';
         return 3;
+    }
+
+    if (!customScaleWorks()) {
+        std::cerr << "custom scale mask did not change target mapping\n";
+        return 4;
     }
 
     std::cout << "style_protection_smoke PASS"
