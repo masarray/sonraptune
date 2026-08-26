@@ -7,6 +7,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     using F = juce::AudioParameterFloat;
     using B = juce::AudioParameterBool;
     using C = juce::AudioParameterChoice;
+    using I = juce::AudioParameterInt;
     juce::AudioProcessorValueTreeState::ParameterLayout p;
 
     p.add(std::make_unique<C>(juce::ParameterID{ParamIds::mode, 1}, "Mode",
@@ -15,6 +16,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         juce::StringArray{"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"}, 0));
     p.add(std::make_unique<C>(juce::ParameterID{ParamIds::scale, 1}, "Scale",
         juce::StringArray{"Major", "Natural Minor", "Chromatic", "Custom"}, 1));
+    p.add(std::make_unique<I>(juce::ParameterID{ParamIds::customMask, 1},
+        "Custom Scale Mask", 1, 4095, 4095));
     p.add(std::make_unique<C>(juce::ParameterID{ParamIds::vocalRange, 1}, "Vocal Range",
         juce::StringArray{"Auto", "Low", "Mid", "High"}, 0));
 
