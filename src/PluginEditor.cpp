@@ -64,61 +64,34 @@ void SonRapLookAndFeel::drawRotarySlider(juce::Graphics& g,
     const auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
     juce::Path track;
-    track.addCentredArc(centre.x,
-                        centre.y,
-                        radius,
-                        radius,
-                        0.0f,
-                        rotaryStartAngle,
-                        rotaryEndAngle,
-                        true);
+    track.addCentredArc(centre.x, centre.y, radius, radius, 0.0f,
+                        rotaryStartAngle, rotaryEndAngle, true);
     g.setColour(colour(0xff2a333eu));
-    g.strokePath(track,
-                 juce::PathStrokeType(5.0f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    g.strokePath(track, juce::PathStrokeType(5.0f,
+                                             juce::PathStrokeType::curved,
+                                             juce::PathStrokeType::rounded));
 
     juce::Path valueArc;
-    valueArc.addCentredArc(centre.x,
-                           centre.y,
-                           radius,
-                           radius,
-                           0.0f,
-                           rotaryStartAngle,
-                           angle,
-                           true);
+    valueArc.addCentredArc(centre.x, centre.y, radius, radius, 0.0f,
+                           rotaryStartAngle, angle, true);
     g.setColour(slider.isEnabled() ? accent_ : colour(kMuted));
-    g.strokePath(valueArc,
-                 juce::PathStrokeType(5.0f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    g.strokePath(valueArc, juce::PathStrokeType(5.0f,
+                                                juce::PathStrokeType::curved,
+                                                juce::PathStrokeType::rounded));
 
     const auto faceRadius = std::max(8.0f, radius - 10.0f);
-    juce::ColourGradient face(colour(0xff252d37u),
-                              centre.x,
-                              centre.y - faceRadius,
-                              colour(0xff11161du),
-                              centre.x,
-                              centre.y + faceRadius,
-                              false);
+    juce::ColourGradient face(colour(0xff252d37u), centre.x, centre.y - faceRadius,
+                              colour(0xff11161du), centre.x, centre.y + faceRadius, false);
     g.setGradientFill(face);
-    g.fillEllipse(centre.x - faceRadius,
-                  centre.y - faceRadius,
-                  faceRadius * 2.0f,
-                  faceRadius * 2.0f);
+    g.fillEllipse(centre.x - faceRadius, centre.y - faceRadius,
+                  faceRadius * 2.0f, faceRadius * 2.0f);
     g.setColour(colour(0xff394552u));
-    g.drawEllipse(centre.x - faceRadius,
-                  centre.y - faceRadius,
-                  faceRadius * 2.0f,
-                  faceRadius * 2.0f,
-                  1.0f);
+    g.drawEllipse(centre.x - faceRadius, centre.y - faceRadius,
+                  faceRadius * 2.0f, faceRadius * 2.0f, 1.0f);
 
     juce::Path pointer;
-    pointer.addRoundedRectangle(-1.5f,
-                                -faceRadius + 5.0f,
-                                3.0f,
-                                std::max(8.0f, faceRadius * 0.34f),
-                                1.5f);
+    pointer.addRoundedRectangle(-1.5f, -faceRadius + 5.0f, 3.0f,
+                                std::max(8.0f, faceRadius * 0.34f), 1.5f);
     pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centre.x, centre.y));
     g.setColour(colour(kText));
     g.fillPath(pointer);
@@ -128,10 +101,8 @@ void SonRapLookAndFeel::drawRotarySlider(juce::Graphics& g,
     const auto dot = centre
         + juce::Point<float>(std::cos(dotAngle), std::sin(dotAngle)) * (radius + 1.0f);
     g.setColour(accent2_.withAlpha(0.9f));
-    g.fillEllipse(dot.x - dotRadius,
-                  dot.y - dotRadius,
-                  dotRadius * 2.0f,
-                  dotRadius * 2.0f);
+    g.fillEllipse(dot.x - dotRadius, dot.y - dotRadius,
+                  dotRadius * 2.0f, dotRadius * 2.0f);
 }
 
 void SonRapLookAndFeel::drawComboBox(juce::Graphics& g,
@@ -144,8 +115,7 @@ void SonRapLookAndFeel::drawComboBox(juce::Graphics& g,
                                       int,
                                       juce::ComboBox& box)
 {
-    auto r = juce::Rectangle<float>(0.0f,
-                                    0.0f,
+    auto r = juce::Rectangle<float>(0.0f, 0.0f,
                                     static_cast<float>(width),
                                     static_cast<float>(height)).reduced(0.5f);
     g.setColour(colour(isButtonDown ? 0xff222d39u : kPanelRaised));
@@ -160,10 +130,9 @@ void SonRapLookAndFeel::drawComboBox(juce::Graphics& g,
     arrow.lineTo(cx, cy + 2.0f);
     arrow.lineTo(cx + 4.0f, cy - 2.0f);
     g.setColour(accent_);
-    g.strokePath(arrow,
-                 juce::PathStrokeType(1.7f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    g.strokePath(arrow, juce::PathStrokeType(1.7f,
+                                             juce::PathStrokeType::curved,
+                                             juce::PathStrokeType::rounded));
 }
 
 void SonRapLookAndFeel::drawButtonBackground(juce::Graphics& g,
@@ -231,10 +200,8 @@ MacroKnob::MacroKnob(const juce::String& title)
                                 true);
     slider_.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 72, 18);
     slider_.setColour(juce::Slider::textBoxTextColourId, colour(kText));
-    slider_.setColour(juce::Slider::textBoxBackgroundColourId,
-                      juce::Colours::transparentBlack);
-    slider_.setColour(juce::Slider::textBoxOutlineColourId,
-                      juce::Colours::transparentBlack);
+    slider_.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+    slider_.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(slider_);
 }
 
@@ -277,10 +244,7 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
     auto header = panel.removeFromTop(32.0f).reduced(15.0f, 0.0f);
     g.setColour(colour(kMuted));
     g.setFont(11.0f);
-    g.drawText("PITCH FOCUS",
-               header.toNearestInt(),
-               juce::Justification::centredLeft,
-               false);
+    g.drawText("PITCH FOCUS", header.toNearestInt(), juce::Justification::centredLeft, false);
 
     const auto stateText = !hasFrame_ ? "WAITING"
         : frame_.state == PitchState::voicedStable ? "LOCKED"
@@ -290,10 +254,7 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
         : frame_.state == PitchState::unvoiced ? "UNVOICED"
         : "SILENCE";
     g.setColour(frame_.state == PitchState::voicedStable ? colour(kAccent) : colour(kMuted));
-    g.drawText(stateText,
-               header.toNearestInt(),
-               juce::Justification::centredRight,
-               false);
+    g.drawText(stateText, header.toNearestInt(), juce::Justification::centredRight, false);
 
     auto body = panel.reduced(14.0f, 8.0f);
     const auto centre = juce::Point<float>(body.getCentreX(), body.getCentreY() + 6.0f);
@@ -304,37 +265,22 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
     const auto mid = (start + end) * 0.5f;
 
     juce::Path backgroundArc;
-    backgroundArc.addCentredArc(centre.x,
-                                centre.y,
-                                radius,
-                                radius,
-                                0.0f,
-                                start,
-                                end,
-                                true);
+    backgroundArc.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, start, end, true);
     g.setColour(colour(0xff29323du));
-    g.strokePath(backgroundArc,
-                 juce::PathStrokeType(8.0f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    g.strokePath(backgroundArc, juce::PathStrokeType(8.0f,
+                                                     juce::PathStrokeType::curved,
+                                                     juce::PathStrokeType::rounded));
 
     const auto cents = std::clamp(frame_.correctionCents, -100.0f, 100.0f);
     const auto normalised = (cents + 100.0f) / 200.0f;
     const auto currentAngle = start + normalised * (end - start);
     juce::Path valueArc;
-    valueArc.addCentredArc(centre.x,
-                           centre.y,
-                           radius,
-                           radius,
-                           0.0f,
-                           std::min(mid, currentAngle),
-                           std::max(mid, currentAngle),
-                           true);
+    valueArc.addCentredArc(centre.x, centre.y, radius, radius, 0.0f,
+                           std::min(mid, currentAngle), std::max(mid, currentAngle), true);
     g.setColour(cents >= 0.0f ? colour(kAccent) : colour(kAccent2));
-    g.strokePath(valueArc,
-                 juce::PathStrokeType(8.0f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    g.strokePath(valueArc, juce::PathStrokeType(8.0f,
+                                                juce::PathStrokeType::curved,
+                                                juce::PathStrokeType::rounded));
 
     auto noteArea = juce::Rectangle<float>(centre.x - radius * 0.75f,
                                            centre.y - radius * 0.52f,
@@ -342,18 +288,14 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
                                            radius * 0.82f);
     g.setColour(colour(kText));
     g.setFont(std::max(28.0f, radius * 0.48f));
-    g.drawText(midiName(frame_.detectedMidi),
-               noteArea.toNearestInt(),
-               juce::Justification::centred,
-               false);
+    g.drawText(midiName(frame_.detectedMidi), noteArea.toNearestInt(),
+               juce::Justification::centred, false);
 
     auto targetArea = noteArea.translated(0.0f, radius * 0.52f);
     g.setFont(12.0f);
     g.setColour(colour(kMuted));
-    g.drawText("TARGET  " + midiName(frame_.targetMidi),
-               targetArea.toNearestInt(),
-               juce::Justification::centred,
-               false);
+    g.drawText("TARGET  " + midiName(frame_.targetMidi), targetArea.toNearestInt(),
+               juce::Justification::centred, false);
 
     const auto centsText = juce::String(cents, 1) + " ct";
     auto centsArea = juce::Rectangle<float>(centre.x - 50.0f,
@@ -362,10 +304,7 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
                                             22.0f);
     g.setColour(colour(kText));
     g.setFont(13.0f);
-    g.drawText(centsText,
-               centsArea.toNearestInt(),
-               juce::Justification::centred,
-               false);
+    g.drawText(centsText, centsArea.toNearestInt(), juce::Justification::centred, false);
 
     const auto confidence = std::clamp(frame_.confidence, 0.0f, 1.0f);
     auto confidenceArea = body.removeFromBottom(9.0f).reduced(18.0f, 0.0f);
@@ -377,23 +316,31 @@ void PitchFocusDisplay::paint(juce::Graphics& g)
     g.fillRoundedRectangle(confidenceFill, 3.0f);
 }
 
-void ScaleStrip::setScale(int key, int scale)
+void ScaleStrip::setScale(int key, int scale, std::uint16_t customMask)
 {
     key = juce::jlimit(0, 11, key);
     scale = juce::jlimit(0, 3, scale);
-    if (key_ == key && scale_ == scale)
+    customMask = static_cast<std::uint16_t>(customMask & 0x0FFFu);
+    customMask |= 0x0001u;
+    if (key_ == key && scale_ == scale && customMask_ == customMask)
         return;
 
     key_ = key;
     scale_ = scale;
+    customMask_ = customMask;
     repaint();
 }
 
-bool ScaleStrip::isScaleTone(int pitchClass, int key, int scale) noexcept
+bool ScaleStrip::isScaleTone(int pitchClass,
+                             int key,
+                             int scale,
+                             std::uint16_t customMask) noexcept
 {
     const auto relative = (pitchClass - key + 12) % 12;
-    if (scale == 2 || scale == 3)
+    if (scale == 2)
         return true;
+    if (scale == 3)
+        return (customMask & (1u << relative)) != 0;
 
     static constexpr std::array<int, 7> major{0, 2, 4, 5, 7, 9, 11};
     static constexpr std::array<int, 7> minor{0, 2, 3, 5, 7, 8, 10};
@@ -412,14 +359,9 @@ void ScaleStrip::paint(juce::Graphics& g)
     auto title = panel.removeFromTop(23.0f).reduced(12.0f, 0.0f);
     g.setColour(colour(kMuted));
     g.setFont(10.5f);
-    g.drawText("SCALE MAP",
-               title.toNearestInt(),
-               juce::Justification::centredLeft,
-               false);
-    g.drawText("ROOT + ALLOWED NOTES",
-               title.toNearestInt(),
-               juce::Justification::centredRight,
-               false);
+    g.drawText("SCALE MAP", title.toNearestInt(), juce::Justification::centredLeft, false);
+    g.drawText(scale_ == 3 ? "CUSTOM  /  CLICK NOTES" : "ROOT + ALLOWED NOTES",
+               title.toNearestInt(), juce::Justification::centredRight, false);
 
     static constexpr const char* names[] = {
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -432,7 +374,7 @@ void ScaleStrip::paint(juce::Graphics& g)
                                            notes.getY(),
                                            cellWidth - 4.0f,
                                            notes.getHeight());
-        const auto active = isScaleTone(i, key_, scale_);
+        const auto active = isScaleTone(i, key_, scale_, customMask_);
         const auto root = i == key_;
 
         g.setColour(root ? colour(kAccent).withAlpha(0.30f)
@@ -448,11 +390,35 @@ void ScaleStrip::paint(juce::Graphics& g)
                          : active ? colour(0xffbdcad5u)
                                   : colour(kMuted).withAlpha(0.65f));
         g.setFont(12.0f);
-        g.drawText(names[i],
-                   cell.toNearestInt(),
-                   juce::Justification::centred,
-                   false);
+        g.drawText(names[i], cell.toNearestInt(), juce::Justification::centred, false);
     }
+}
+
+void ScaleStrip::mouseDown(const juce::MouseEvent& event)
+{
+    if (scale_ != 3)
+        return;
+
+    auto panel = getLocalBounds().toFloat().reduced(1.0f);
+    panel.removeFromTop(23.0f);
+    auto notes = panel.reduced(10.0f, 7.0f);
+    if (!notes.contains(event.position))
+        return;
+
+    const auto cellWidth = notes.getWidth() / 12.0f;
+    const int pitchClass = juce::jlimit(0, 11,
+        static_cast<int>((event.position.x - notes.getX()) / cellWidth));
+    const int relative = (pitchClass - key_ + 12) % 12;
+
+    // The selected key remains the tonal anchor and cannot be removed.
+    if (relative == 0)
+        return;
+
+    customMask_ ^= static_cast<std::uint16_t>(1u << relative);
+    customMask_ |= 0x0001u;
+    if (onCustomMaskChanged)
+        onCustomMaskChanged(customMask_);
+    repaint();
 }
 
 PluginEditor::PluginEditor(PluginProcessor& processor)
@@ -475,9 +441,10 @@ PluginEditor::PluginEditor(PluginProcessor& processor)
     configureCombo(vocalRange_,
                    "Detector range. Auto is the safe default for mixed vocal sessions.");
     configureCombo(key_, "Song key used by the pitch target mapper.");
-    configureCombo(scale_, "Scale used to select legal target notes.");
+    configureCombo(scale_,
+                   "Scale used to select legal target notes. In Custom mode click notes in Scale Map.");
     configureCombo(mode_,
-                   "SonRapTune correction character. This changes behaviour, not branding presets.");
+                   "Correction character: Natural is loose, Modern Rap tight, Trap Lock fastest, Hook smoother.");
 
     configurePercentKnob(tune_, "Overall correction strength.");
     configurePercentKnob(stability_,
@@ -485,10 +452,10 @@ PluginEditor::PluginEditor(PluginProcessor& processor)
     configurePercentKnob(feel_,
                          "Preserves intentional pitch movement and expressive phrasing.");
     configurePercentKnob(formant_,
-                         "Formant preservation amount. Engine implementation remains an alpha feature.");
+                         "PSOLA formant-retention strength. 100% keeps source-period grain geometry.");
     configurePercentKnob(consonant_,
-                         "Protection amount for consonants and unvoiced material.");
-    configurePercentKnob(mix_, "Wet/dry mix.");
+                         "Smoothly protects sibilants, noisy consonants and hard onsets from pitch shifting.");
+    configurePercentKnob(mix_, "Wet/dry mix with click-safe smoothing.");
 
     speed_.slider().setTextValueSuffix(" ms");
     speed_.slider().setNumDecimalPlacesToDisplay(1);
@@ -497,12 +464,12 @@ PluginEditor::PluginEditor(PluginProcessor& processor)
 
     output_.slider().setTextValueSuffix(" dB");
     output_.slider().setNumDecimalPlacesToDisplay(1);
-    output_.slider().setTooltip("Output trim after pitch processing.");
+    output_.slider().setTooltip("Output trim with click-safe smoothing.");
 
     bypass_.setClickingTogglesState(true);
     bypass_.setColour(juce::TextButton::textColourOffId, colour(0xffaab6c1u));
     bypass_.setColour(juce::TextButton::textColourOnId, colour(kText));
-    bypass_.setTooltip("Bypass SonRapTune processing while keeping the plugin loaded.");
+    bypass_.setTooltip("Smoothly bypass SonRapTune while keeping latency alignment.");
 
     addAndMakeVisible(vocalRange_);
     addAndMakeVisible(key_);
@@ -527,24 +494,28 @@ PluginEditor::PluginEditor(PluginProcessor& processor)
     scaleAttachment_ = std::make_unique<ComboAttachment>(state, ParamIds::scale, scale_.box());
     modeAttachment_ = std::make_unique<ComboAttachment>(state, ParamIds::mode, mode_.box());
 
-    speedAttachment_ = std::make_unique<SliderAttachment>(
-        state, ParamIds::speed, speed_.slider());
-    feelAttachment_ = std::make_unique<SliderAttachment>(
-        state, ParamIds::feel, feel_.slider());
-    tuneAttachment_ = std::make_unique<SliderAttachment>(
-        state, ParamIds::tune, tune_.slider());
+    speedAttachment_ = std::make_unique<SliderAttachment>(state, ParamIds::speed, speed_.slider());
+    feelAttachment_ = std::make_unique<SliderAttachment>(state, ParamIds::feel, feel_.slider());
+    tuneAttachment_ = std::make_unique<SliderAttachment>(state, ParamIds::tune, tune_.slider());
     stabilityAttachment_ = std::make_unique<SliderAttachment>(
         state, ParamIds::stability, stability_.slider());
     formantAttachment_ = std::make_unique<SliderAttachment>(
         state, ParamIds::formant, formant_.slider());
     consonantAttachment_ = std::make_unique<SliderAttachment>(
         state, ParamIds::consonant, consonant_.slider());
-    mixAttachment_ = std::make_unique<SliderAttachment>(
-        state, ParamIds::mix, mix_.slider());
+    mixAttachment_ = std::make_unique<SliderAttachment>(state, ParamIds::mix, mix_.slider());
     outputAttachment_ = std::make_unique<SliderAttachment>(
         state, ParamIds::outputTrim, output_.slider());
-    bypassAttachment_ = std::make_unique<ButtonAttachment>(
-        state, ParamIds::bypass, bypass_);
+    bypassAttachment_ = std::make_unique<ButtonAttachment>(state, ParamIds::bypass, bypass_);
+
+    scaleStrip_.onCustomMaskChanged = [this](std::uint16_t mask) {
+        if (auto* parameter = processor_.apvts.getParameter(ParamIds::customMask)) {
+            parameter->beginChangeGesture();
+            parameter->setValueNotifyingHost(
+                parameter->convertTo0to1(static_cast<float>(mask)));
+            parameter->endChangeGesture();
+        }
+    };
 
     timerCallback();
     startTimerHz(30);
@@ -570,13 +541,10 @@ void PluginEditor::configureCombo(LabeledCombo& combo, const juce::String& toolt
 
 void PluginEditor::paint(juce::Graphics& g)
 {
-    juce::ColourGradient background(colour(0xff090c11u),
-                                     0.0f,
-                                     0.0f,
+    juce::ColourGradient background(colour(0xff090c11u), 0.0f, 0.0f,
                                      colour(0xff14111cu),
                                      static_cast<float>(getWidth()),
-                                     static_cast<float>(getHeight()),
-                                     false);
+                                     static_cast<float>(getHeight()), false);
     background.addColour(0.55, colour(0xff0f151cu));
     g.setGradientFill(background);
     g.fillAll();
@@ -590,45 +558,30 @@ void PluginEditor::paint(juce::Graphics& g)
     g.setColour(colour(kAccent));
     juce::Path mark;
     mark.startNewSubPath(logo.getX() + 9.0f, logo.getCentreY() + 7.0f);
-    mark.cubicTo(logo.getX() + 13.0f,
-                 logo.getY() + 3.0f,
-                 logo.getRight() - 11.0f,
-                 logo.getBottom() - 3.0f,
-                 logo.getRight() - 7.0f,
-                 logo.getCentreY() - 6.0f);
-    g.strokePath(mark,
-                 juce::PathStrokeType(3.2f,
-                                      juce::PathStrokeType::curved,
-                                      juce::PathStrokeType::rounded));
+    mark.cubicTo(logo.getX() + 13.0f, logo.getY() + 3.0f,
+                 logo.getRight() - 11.0f, logo.getBottom() - 3.0f,
+                 logo.getRight() - 7.0f, logo.getCentreY() - 6.0f);
+    g.strokePath(mark, juce::PathStrokeType(3.2f,
+                                            juce::PathStrokeType::curved,
+                                            juce::PathStrokeType::rounded));
 
     auto brand = header.removeFromLeft(270).reduced(9, 0);
     auto product = brand.removeFromTop(30);
     g.setColour(colour(kText));
     g.setFont(21.0f);
-    g.drawText("SONRAPTUNE",
-               product,
-               juce::Justification::centredLeft,
-               false);
+    g.drawText("SONRAPTUNE", product, juce::Justification::centredLeft, false);
     g.setColour(colour(kMuted));
     g.setFont(10.5f);
-    g.drawText("REAL-TIME VOCAL PITCH",
-               brand,
-               juce::Justification::centredLeft,
-               false);
+    g.drawText("REAL-TIME VOCAL PITCH", brand, juce::Justification::centredLeft, false);
 
     auto status = header.removeFromRight(210).reduced(0, 7);
     status.removeFromRight(96);
     g.setColour(colour(kMuted));
     g.setFont(10.5f);
-    g.drawText("PITCH ENGINE  /  LIVE",
-               status,
-               juce::Justification::centredRight,
-               false);
+    g.drawText("PITCH ENGINE  /  LIVE", status, juce::Justification::centredRight, false);
 
     g.setColour(colour(kBorder).withAlpha(0.75f));
-    g.drawHorizontalLine(68,
-                         18.0f,
-                         static_cast<float>(getWidth() - 18));
+    g.drawHorizontalLine(68, 18.0f, static_cast<float>(getWidth() - 18));
 }
 
 void PluginEditor::resized()
@@ -680,9 +633,13 @@ void PluginEditor::timerCallback()
 
     const auto* keyValue = processor_.apvts.getRawParameterValue(ParamIds::key);
     const auto* scaleValue = processor_.apvts.getRawParameterValue(ParamIds::scale);
-    if (keyValue != nullptr && scaleValue != nullptr) {
-        scaleStrip_.setScale(static_cast<int>(keyValue->load()),
-                             static_cast<int>(scaleValue->load()));
+    const auto* customMaskValue = processor_.apvts.getRawParameterValue(ParamIds::customMask);
+    if (keyValue != nullptr && scaleValue != nullptr && customMaskValue != nullptr) {
+        scaleStrip_.setScale(
+            static_cast<int>(keyValue->load()),
+            static_cast<int>(scaleValue->load()),
+            static_cast<std::uint16_t>(juce::jlimit(
+                1, 4095, static_cast<int>(customMaskValue->load()))));
     }
 }
 

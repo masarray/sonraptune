@@ -3,6 +3,8 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "src/PluginProcessor.h"
 #include <array>
+#include <cstdint>
+#include <functional>
 #include <memory>
 
 namespace sonraptune {
@@ -80,13 +82,20 @@ private:
 
 class ScaleStrip final : public juce::Component {
 public:
-    void setScale(int key, int scale);
+    void setScale(int key, int scale, std::uint16_t customMask);
     void paint(juce::Graphics&) override;
+    void mouseDown(const juce::MouseEvent& event) override;
+
+    std::function<void(std::uint16_t)> onCustomMaskChanged;
 
 private:
-    static bool isScaleTone(int pitchClass, int key, int scale) noexcept;
+    static bool isScaleTone(int pitchClass,
+                            int key,
+                            int scale,
+                            std::uint16_t customMask) noexcept;
     int key_ = 0;
     int scale_ = 1;
+    std::uint16_t customMask_ = 0x0FFFu;
 };
 
 class PluginEditor final : public juce::AudioProcessorEditor,

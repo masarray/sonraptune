@@ -16,6 +16,7 @@ add_library(SonRapTuneCore STATIC
     engine/tracking/CausalPitchTracker.cpp
     engine/mapping/ScaleMapper.cpp
     engine/correction/CorrectionTrajectory.cpp
+    engine/protection/ConsonantProtection.cpp
     engine/shifting/DualHeadTimeDomainShifter.cpp
     engine/shifting/PitchMarkEstimator.cpp
     engine/shifting/PeriodSynchronousTimeDomainShifter.cpp
@@ -48,12 +49,16 @@ if(SONRAPTUNE_BUILD_TESTS)
     add_executable(sonraptune_crackle_smoke tools/crackle_smoke.cpp)
     target_link_libraries(sonraptune_crackle_smoke PRIVATE SonRapTuneCore)
 
+    add_executable(sonraptune_style_protection_smoke tools/style_protection_smoke.cpp)
+    target_link_libraries(sonraptune_style_protection_smoke PRIVATE SonRapTuneCore)
+
     add_test(NAME detector_benchmark COMMAND sonraptune_detector_benchmark)
     add_test(NAME core_smoke COMMAND sonraptune_core_smoke)
     add_test(NAME realtime_contract_smoke COMMAND sonraptune_realtime_contract_smoke)
     add_test(NAME shifter_smoke COMMAND sonraptune_shifter_smoke)
     add_test(NAME psola_smoke COMMAND sonraptune_psola_smoke)
     add_test(NAME crackle_smoke COMMAND sonraptune_crackle_smoke)
+    add_test(NAME style_protection_smoke COMMAND sonraptune_style_protection_smoke)
 endif()
 
 if(SONRAPTUNE_BUILD_PLUGIN)

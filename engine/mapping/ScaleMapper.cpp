@@ -4,6 +4,25 @@
 #include <cmath>
 
 namespace sonraptune {
+namespace {
+
+struct TargetStyle {
+    float boundaryScale;
+    float commitScale;
+};
+
+TargetStyle targetStyle(ProductMode mode) noexcept
+{
+    switch (mode) {
+        case ProductMode::natural:   return {1.30f, 1.45f};
+        case ProductMode::modernRap: return {0.85f, 0.85f};
+        case ProductMode::trapLock:  return {0.45f, 0.40f};
+        case ProductMode::hookDebug: return {1.05f, 1.15f};
+    }
+    return {1.0f, 1.0f};
+}
+
+} // namespace
 
 void ScaleMapper::reset() noexcept
 {
@@ -69,8 +88,13 @@ float ScaleMapper::map(float detectedMidi, bool onset, const RuntimeParameters& 
         return currentTarget_;
     }
 
-    const float boundaryMargin = 0.05f + 0.35f * std::clamp(p.stability, 0.0f, 1.0f);
-    const int minimumCommit = 1 + static_cast<int>(std::lround(5.0f * p.stability));
+    const auto style = targetStyle(p.mode);
+    const float boundaryMargin = (0.05f + 0.35f
+        * std::clamp(p.stability, 0.0f, 1.0f)) * style.boundaryScale;
+    const int baseCommit = 1 + static_cast<int>(
+        std::lround(5.0f * std::clamp(p.stability, 0.0f, 1.0f)));
+    const int minimumCommit = std::max(
+        1, static_cast<int>(std::lround(baseCommit * style.commitScale)));
     const float distanceToCurrent = std::abs(detectedMidi - currentTarget_);
     const float distanceToProposed = std::abs(detectedMidi - static_cast<float>(proposed));
     const bool decisivelyCloser = distanceToProposed + boundaryMargin < distanceToCurrent;

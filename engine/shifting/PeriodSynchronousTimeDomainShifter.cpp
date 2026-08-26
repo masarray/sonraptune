@@ -100,10 +100,6 @@ void PeriodSynchronousTimeDomainShifter::setSourcePitch(float hz,
         ++diagnostics_.reliabilityTransitions;
         markEstimator_.reset();
         clearVoicedState();
-
-        // Already scheduled Hann-windowed grains are allowed to finish. The
-        // requested wet mask and coverage envelope return the output to aligned
-        // dry without cutting an OLA tail at a non-zero waveform sample.
     }
 
     if (sourceReliable_)
@@ -170,6 +166,7 @@ void PeriodSynchronousTimeDomainShifter::scheduleGrain(
     std::int64_t earliestOutputSample) noexcept
 {
     radius = std::clamp(radius, 16, maxRadiusSamples_);
+    diagnostics_.lastGrainRadius = radius;
     const float inverseRadius = 1.0f / static_cast<float>(radius);
 
     for (int offset = -radius; offset <= radius; ++offset) {
@@ -214,16 +211,26 @@ void PeriodSynchronousTimeDomainShifter::scheduleAvailableGrains(
         static_cast<float>(markEstimator_.minPeriodSamples()),
         static_cast<float>(markEstimator_.maxPeriodSamples()));
 
-    const int radius = std::clamp(
-        static_cast<int>(std::lround(sourcePeriod)),
-        16,
-        maxRadiusSamples_);
-    const std::int64_t latestReadyMark = currentSample - radius - 2;
-    const double safeSynthesisTime = static_cast<double>(latestReadyMark);
-
     ratio = std::clamp(ratio, 0.5f, 2.0f);
     const double targetPeriod = static_cast<double>(sourcePeriod)
         / static_cast<double>(ratio);
+
+    // Classic PSOLA largely preserves vocal-tract envelope by extracting grains
+    // around the original source period. Formant Preserve exposes that behaviour
+    // as a real control: 100% uses source-period geometry; 0% allows the grain
+    // geometry to follow the target period, coupling timbre more strongly to the
+    // pitch shift. This is a lightweight baseline, not an independent formant
+    // shifter or LPC/cepstral envelope model.
+    const double grainPeriod = targetPeriod
+        + static_cast<double>(formantPreserve_)
+            * (static_cast<double>(sourcePeriod) - targetPeriod);
+    const int radius = std::clamp(
+        static_cast<int>(std::lround(grainPeriod)),
+        16,
+        maxRadiusSamples_);
+
+    const std::int64_t latestReadyMark = currentSample - radius - 2;
+    const double safeSynthesisTime = static_cast<double>(latestReadyMark);
 
     int guard = 0;
     while (nextSynthesisTime_ <= safeSynthesisTime && guard++ < 8) {
@@ -291,8 +298,6 @@ void PeriodSynchronousTimeDomainShifter::process(
             ? std::max(0.0f, outputWeight_[outputIndex])
             : 0.0f;
 
-        // There must be no binary switch between aligned dry and normalised
-        // OLA. Hann coverage is converted continuously to 0..1.
         constexpr float fullCoverageWeight = 0.75f;
         const float instantaneousCoverage = smoothStep01(
             weight / fullCoverageWeight);
@@ -309,12 +314,6 @@ void PeriodSynchronousTimeDomainShifter::process(
         if (requestedWet > 0.5f && instantaneousCoverage < 0.01f)
             ++diagnostics_.coverageFallbackSamples;
 
-        // The old implementation hard-switched to aligned dry whenever the
-        // smoothed ratio entered a tiny band around 1.0. During a downward
-        // correction crossing, that condition lasted only a handful of samples
-        // and inserted a five-sample dry island between two PSOLA waveforms,
-        // producing the deterministic paired crackles. Preserve transparency
-        // near unity with a cents-domain target and an 8 ms continuous fade.
         const float ratioForLog = std::max(1.0e-6f, smoothedRatio_);
         const float distanceFromUnityCents = std::abs(
             1200.0f * std::log2(ratioForLog));
@@ -335,10 +334,6 @@ void PeriodSynchronousTimeDomainShifter::process(
                 channel, absoluteSample_ - latencySamples_);
             float normalisedOla = alignedDry;
             if (currentGeneration && weight > 1.0e-6f) {
-                // All OLA windows are non-negative, so this quotient is a
-                // bounded weighted average. Low-weight edge samples are faded
-                // continuously by instantaneousCoverage rather than selected
-                // through a hard threshold.
                 normalisedOla =
                     outputSum_[static_cast<std::size_t>(channel)][outputIndex]
                     / weight;

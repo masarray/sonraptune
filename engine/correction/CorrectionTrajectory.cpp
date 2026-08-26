@@ -4,6 +4,32 @@
 #include <cmath>
 
 namespace sonraptune {
+namespace {
+
+struct StyleCurve {
+    float tuneScale;
+    float speedScale;
+    float deadZoneScale;
+    float attackSeconds;
+    float releaseSeconds;
+};
+
+StyleCurve styleCurve(ProductMode mode) noexcept
+{
+    switch (mode) {
+        case ProductMode::natural:
+            return {0.82f, 1.45f, 1.35f, 0.012f, 0.009f};
+        case ProductMode::modernRap:
+            return {1.00f, 0.82f, 0.82f, 0.006f, 0.006f};
+        case ProductMode::trapLock:
+            return {1.00f, 0.38f, 0.35f, 0.003f, 0.006f};
+        case ProductMode::hookDebug:
+            return {0.92f, 1.05f, 0.95f, 0.007f, 0.010f};
+    }
+    return {1.0f, 1.0f, 1.0f, 0.008f, 0.006f};
+}
+
+} // namespace
 
 void CorrectionTrajectory::prepare(double sampleRate) noexcept
 {
@@ -40,16 +66,19 @@ void CorrectionTrajectory::setFrame(const TrackedPitch& tracked,
         return;
     }
 
+    const auto curve = styleCurve(p.mode);
     const float rawError = (targetMidi - tracked.midi) * 100.0f;
     const float feel = std::clamp(p.feel, 0.0f, 1.0f);
-    const float deadZone = 2.0f + 28.0f * feel;
+    const float deadZone = (2.0f + 28.0f * feel) * curve.deadZoneScale;
     float effective = rawError;
     if (std::abs(effective) <= deadZone)
         effective = 0.0f;
     else
         effective -= std::copysign(deadZone, effective);
 
-    targetCents_ = effective * std::clamp(p.tune, 0.0f, 1.0f);
+    const float effectiveTune = std::clamp(
+        p.tune * curve.tuneScale, 0.0f, 1.0f);
+    targetCents_ = effective * effectiveTune;
 }
 
 void CorrectionTrajectory::render(float* ratioPerSample,
@@ -63,17 +92,16 @@ void CorrectionTrajectory::render(float* ratioPerSample,
         return;
     }
 
-    const float speedSeconds = std::max(0.0005f, p.speedMs * 0.001f);
+    const auto curve = styleCurve(p.mode);
+    const float speedSeconds = std::max(
+        0.0005f, p.speedMs * 0.001f * curve.speedScale);
     const float pitchAlpha = 1.0f - std::exp(
         -1.0f / static_cast<float>(sampleRate_ * speedSeconds));
 
-    // Wet-path state transitions are intentionally slower than the fastest
-    // pitch setting. This prevents sample discontinuities when voicing or
-    // confidence crosses a threshold.
     const float maskAttackAlpha = 1.0f - std::exp(
-        -1.0f / static_cast<float>(sampleRate_ * 0.008));
+        -1.0f / static_cast<float>(sampleRate_ * curve.attackSeconds));
     const float maskReleaseAlpha = 1.0f - std::exp(
-        -1.0f / static_cast<float>(sampleRate_ * 0.004));
+        -1.0f / static_cast<float>(sampleRate_ * curve.releaseSeconds));
 
     float mask = currentMask_;
     for (int i = 0; i < numSamples; ++i) {

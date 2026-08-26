@@ -5,6 +5,7 @@
 #include "engine/tracking/CausalPitchTracker.h"
 #include "engine/mapping/ScaleMapper.h"
 #include "engine/correction/CorrectionTrajectory.h"
+#include "engine/protection/ConsonantProtection.h"
 #include "engine/shifting/PeriodSynchronousTimeDomainShifter.h"
 
 #include <array>
@@ -32,11 +33,16 @@ private:
     CausalPitchTracker tracker_{};
     ScaleMapper mapper_{};
     CorrectionTrajectory trajectory_{};
+    ConsonantProtection consonantProtection_{};
     PeriodSynchronousTimeDomainShifter shifter_{};
     PitchFrame latestFrame_{};
     std::vector<float> analysisMono_{};
     std::vector<float> ratio_{};
     std::vector<float> voicedMask_{};
+    float mixSmoothingAlpha_ = 1.0f;
+    float gainSmoothingAlpha_ = 1.0f;
+    float smoothedMix_ = 1.0f;
+    float smoothedGain_ = 1.0f;
 };
 
 } // namespace sonraptune
