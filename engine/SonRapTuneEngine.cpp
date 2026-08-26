@@ -4,6 +4,15 @@
 #include <cmath>
 
 namespace sonraptune {
+namespace {
+
+float smoothingAlpha(double sampleRate, double seconds) noexcept
+{
+    return 1.0f - std::exp(-1.0f
+        / static_cast<float>(std::max(1.0, sampleRate * seconds)));
+}
+
+} // namespace
 
 void SonRapTuneEngine::prepare(const PrepareSpec& spec)
 {
@@ -18,6 +27,8 @@ void SonRapTuneEngine::prepare(const PrepareSpec& spec)
     trajectory_.prepare(spec_.sampleRate);
     consonantProtection_.prepare(spec_.sampleRate);
     shifter_.prepare(spec_.sampleRate, spec_.maxBlockSize, spec_.channels);
+    mixSmoothingAlpha_ = smoothingAlpha(spec_.sampleRate, 0.005);
+    gainSmoothingAlpha_ = smoothingAlpha(spec_.sampleRate, 0.005);
     reset();
 }
 
@@ -30,6 +41,10 @@ void SonRapTuneEngine::reset() noexcept
     consonantProtection_.reset();
     shifter_.reset();
     latestFrame_ = {};
+    smoothedMix_ = parameters_.bypass
+        ? 0.0f
+        : std::clamp(parameters_.mix, 0.0f, 1.0f);
+    smoothedGain_ = std::pow(10.0f, parameters_.outputTrimDb / 20.0f);
     std::fill(analysisMono_.begin(), analysisMono_.end(), 0.0f);
     std::fill(ratio_.begin(), ratio_.end(), 1.0f);
     std::fill(voicedMask_.begin(), voicedMask_.end(), 0.0f);
@@ -67,38 +82,34 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
 
     trajectory_.render(ratio_.data(), voicedMask_.data(), numSamples, parameters_);
 
-    // Consonant Protect is a real signal path: it analyses short-time waveform
-    // roughness and zero-crossing behaviour, then smoothly reduces the pitch
-    // wet path for noisy consonants, sibilants and hard onsets. It never changes
-    // the detector target or applies a limiter to hide discontinuities.
     consonantProtection_.process(analysisMono_.data(),
                                  voicedMask_.data(),
                                  numSamples,
                                  parameters_.consonantProtect,
                                  latestFrame_);
 
-    const float userMix = parameters_.bypass
+    const float targetMix = parameters_.bypass
         ? 0.0f
         : std::clamp(parameters_.mix, 0.0f, 1.0f);
-    for (int i = 0; i < numSamples; ++i)
-        voicedMask_[static_cast<std::size_t>(i)] *= userMix;
+    for (int i = 0; i < numSamples; ++i) {
+        smoothedMix_ += mixSmoothingAlpha_ * (targetMix - smoothedMix_);
+        voicedMask_[static_cast<std::size_t>(i)] *= smoothedMix_;
+    }
 
     shifter_.setSourcePitch(latestFrame_.detectedHz,
                             latestFrame_.confidence,
                             latestFrame_.voicing);
     shifter_.setFormantPreserve(parameters_.formantPreserve);
-
-    // The shifter always runs, including internal bypass, so dry and wet paths
-    // remain aligned to the latency reported to the host.
     shifter_.process(channels, numChannels, numSamples,
                      ratio_.data(), voicedMask_.data());
 
-    const float gain = std::pow(10.0f, parameters_.outputTrimDb / 20.0f);
-    for (int ch = 0; ch < numChannels; ++ch) {
-        if (channels[ch] == nullptr)
-            continue;
-        for (int i = 0; i < numSamples; ++i)
-            channels[ch][i] *= gain;
+    const float targetGain = std::pow(10.0f, parameters_.outputTrimDb / 20.0f);
+    for (int i = 0; i < numSamples; ++i) {
+        smoothedGain_ += gainSmoothingAlpha_ * (targetGain - smoothedGain_);
+        for (int ch = 0; ch < numChannels; ++ch) {
+            if (channels[ch] != nullptr)
+                channels[ch][i] *= smoothedGain_;
+        }
     }
 }
 
