@@ -16,6 +16,7 @@ void SonRapTuneEngine::prepare(const PrepareSpec& spec)
     voicedMask_.assign(static_cast<std::size_t>(spec_.maxBlockSize), 0.0f);
     detector_.prepare(spec_.sampleRate);
     trajectory_.prepare(spec_.sampleRate);
+    consonantProtection_.prepare(spec_.sampleRate);
     shifter_.prepare(spec_.sampleRate, spec_.maxBlockSize, spec_.channels);
     reset();
 }
@@ -26,6 +27,7 @@ void SonRapTuneEngine::reset() noexcept
     tracker_.reset();
     mapper_.reset();
     trajectory_.reset();
+    consonantProtection_.reset();
     shifter_.reset();
     latestFrame_ = {};
     std::fill(analysisMono_.begin(), analysisMono_.end(), 0.0f);
@@ -65,18 +67,26 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
 
     trajectory_.render(ratio_.data(), voicedMask_.data(), numSamples, parameters_);
 
+    // Consonant Protect is a real signal path: it analyses short-time waveform
+    // roughness and zero-crossing behaviour, then smoothly reduces the pitch
+    // wet path for noisy consonants, sibilants and hard onsets. It never changes
+    // the detector target or applies a limiter to hide discontinuities.
+    consonantProtection_.process(analysisMono_.data(),
+                                 voicedMask_.data(),
+                                 numSamples,
+                                 parameters_.consonantProtect,
+                                 latestFrame_);
+
     const float userMix = parameters_.bypass
         ? 0.0f
         : std::clamp(parameters_.mix, 0.0f, 1.0f);
     for (int i = 0; i < numSamples; ++i)
         voicedMask_[static_cast<std::size_t>(i)] *= userMix;
 
-    // Candidate B uses the same detector/tracker estimate as the correction
-    // trajectory. Waveform pitch marks are then refined causally inside the
-    // shifter rather than scheduling fixed-duration grains.
     shifter_.setSourcePitch(latestFrame_.detectedHz,
                             latestFrame_.confidence,
                             latestFrame_.voicing);
+    shifter_.setFormantPreserve(parameters_.formantPreserve);
 
     // The shifter always runs, including internal bypass, so dry and wet paths
     // remain aligned to the latency reported to the host.
