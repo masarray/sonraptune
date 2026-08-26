@@ -10,17 +10,13 @@
 namespace sonraptune {
 
 // E3 candidate B: causal period-synchronous overlap-add pitch shifter.
-//
-// This revision adds P0 containment for real-vocal crackle: scheduled grains
-// are generation tagged, writes to already-consumed samples are rejected,
-// latency covers the complete two-period grain, and OLA coverage is faded
-// rather than switched abruptly.
 class PeriodSynchronousTimeDomainShifter final : public IPitchShifter {
 public:
     struct Diagnostics {
         std::uint64_t rejectedPastWrites = 0;
         std::uint64_t coverageFallbackSamples = 0;
         std::uint64_t reliabilityTransitions = 0;
+        int lastGrainRadius = 0;
     };
 
     void prepare(double sampleRate, int maxBlock, int channels) override;
@@ -28,6 +24,10 @@ public:
     int latencySamples() const noexcept override { return latencySamples_; }
 
     void setSourcePitch(float hz, float confidence, float voicing) noexcept;
+    void setFormantPreserve(float amount) noexcept
+    {
+        formantPreserve_ = amount < 0.0f ? 0.0f : (amount > 1.0f ? 1.0f : amount);
+    }
 
     void process(float* const* channels,
                  int numChannels,
@@ -71,6 +71,7 @@ private:
     float smoothedRatio_ = 1.0f;
     float coverageMix_ = 0.0f;
     float unityDryMix_ = 1.0f;
+    float formantPreserve_ = 1.0f;
 
     std::int64_t absoluteSample_ = 0;
 
