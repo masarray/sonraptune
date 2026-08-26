@@ -1,6 +1,6 @@
 # SonRapTune implementation checklist
 
-Updated: 2026-08-04
+Updated: 2026-08-27
 
 ## Repository separation
 
@@ -19,7 +19,26 @@ Updated: 2026-08-04
 - [x] APVTS project state `SONRAPTUNE_STATE`
 - [x] Lock-free lossy pitch telemetry
 - [x] Host-reported shifter latency
-- [ ] Final custom user interface
+- [x] Custom responsive SonRapTune user interface
+
+## GUI — familiar pitch workflow, original visual system
+
+- [x] Replaced JUCE `GenericAudioProcessorEditor`
+- [x] Original SonRapTune dark visual language and geometric header mark
+- [x] Familiar top-row workflow: Input, Key, Scale, Style, Mix, Output, Bypass
+- [x] Large Speed and Feel controls flanking the live pitch display
+- [x] Live Pitch Focus display driven by the existing lock-free telemetry tap
+- [x] Tune, Stability, Formant, and Consonant macro row
+- [x] Original 12-note Scale Map instead of copying another product's piano/panel geometry
+- [x] All visible controls bound to existing APVTS parameters
+- [x] Resizable editor with host-safe layout limits
+- [x] Real Standalone render visually audited after CI packaging
+- [x] Windows x64, macOS Universal, and Linux x64 build/package validation — CI run 56
+- [ ] Recorded-vocal UX session: verify readability while singing/rapping in a real DAW
+- [ ] Enharmonic note-name policy (flat/sharp naming according to key context)
+- [ ] Final accessibility/keyboard-focus pass
+
+The GUI intentionally keeps the workflow familiar to experienced pitch-correction users while using SonRapTune-specific geometry, colours, controls, scale visualization, branding, and spacing. It does not copy third-party logos, product marks, icons, typefaces, exact panel geometry, or effect artwork.
 
 ## E1 — Analysis
 
@@ -134,7 +153,8 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 - [x] First successful three-platform CI run — run 15, commit `3f52fce`
 - [x] Candidate B successful three-platform CI run — run 29, commit `a0afc31`
 - [x] P0 crackle-containment gate — run 45, six CTest targets passed on all three platforms
-- [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified for P0 containment
+- [x] Custom GUI gate — run 56, VST3/Standalone plus all six tests passed on all three platforms
+- [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified
 - [ ] First published signed production release
 
 ## E6 — Bake-off and gate
@@ -147,8 +167,8 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 
 ## Current milestone
 
-**Reached:** P0 crackle containment merged to `main` in commit `adfabb9278f9879eeb5a652ea12410684f794791`. The deterministic paired crackles were traced to a hard aligned-dry bypass that became active for only five samples while the smoothed correction ratio crossed unity. It has been replaced by a continuous cents-domain transition.
+**Reached:** custom SonRapTune GUI merged to `main` in commit `5f1d6b6fa3ede2ccae01d66e5a69d53cfc0993c1`. The previous generic JUCE editor is gone. SonRapTune now has a dedicated pitch-correction workflow with Input/Key/Scale/Style setup, large Speed and Feel controls, live Pitch Focus telemetry, voice-shape macros, Mix/Output, Bypass, and a 12-note scale map.
 
-**Validated:** GitHub Actions run 45 compiled VST3 and Standalone, passed all six CTest targets—including `crackle_smoke`—created installers, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64. The regression also exercises harmonic-rich quasi-vocal input, pitch glide, voiced/unvoiced transitions, alternating ±2-semitone correction, and realtime scheduling guards.
+**Validated:** GitHub Actions run 56 compiled VST3 and Standalone, passed all six existing DSP regression targets, created packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64. The packaged Linux Standalone was also launched under a virtual display and visually audited at the default 1040×680 editor size.
 
-**Current release status:** engineering alpha for controlled local vocal listening. The reported deterministic crackle path is fixed in automated regression, but recorded male/female rap tests, consonant/onset protection, parameter-automation smoothing, formant preservation, and E4 phase-locked STFT remain open before any production audio-quality claim.
+**Current release status:** engineering alpha for controlled local vocal listening. The GUI foundation is complete enough for real DAW use and iteration; recorded male/female rap tests, consonant/onset protection, parameter-automation smoothing, formant preservation, and E4 phase-locked STFT remain open before any production audio-quality claim.
