@@ -30,7 +30,9 @@ Updated: 2026-08-27
 - [x] Live Pitch Focus display driven by the existing lock-free telemetry tap
 - [x] Tune, Stability, Formant, and Consonant macro row
 - [x] Original 12-note Scale Map instead of copying another product's piano/panel geometry
-- [x] All visible controls bound to existing APVTS parameters
+- [x] Custom Scale turns the Scale Map into a clickable 12-note editor
+- [x] Custom scale mask persists as an automatable APVTS parameter
+- [x] All visible controls now have an active parameter/DSP path
 - [x] Resizable editor with host-safe layout limits
 - [x] Real Standalone render visually audited after CI packaging
 - [x] Windows x64, macOS Universal, and Linux x64 build/package validation — CI run 56
@@ -49,13 +51,15 @@ The GUI intentionally keeps the workflow familiar to experienced pitch-correctio
 - [x] Causal four-beam tracker
 - [x] Octave-jump and voiced-transition penalties
 - [x] Synthetic 70–880 Hz benchmark: median 0.13 cent, gross error 0%
-- [ ] Spectral flatness, ZCR, HF ratio, and adaptive noise floor
+- [ ] Spectral flatness, ZCR, HF ratio, and adaptive noise floor in the primary detector
+- [x] Lightweight waveform roughness / zero-crossing cues for consonant protection
 - [ ] Recorded male/female rap dataset
 - [ ] Flutter comparison against nearest-note baseline
 
 ## E2 — Mapping and trajectory
 
 - [x] Major, Natural Minor, Chromatic, and custom masks
+- [x] Interactive root-relative 12-note Custom Scale mask
 - [x] Key-relative scale mapping
 - [x] Stability hysteresis and note commitment
 - [x] Nearest active MIDI note
@@ -63,8 +67,10 @@ The GUI intentionally keeps the workflow familiar to experienced pitch-correctio
 - [x] Sample-by-sample correction ratio
 - [x] Confidence used as a hysteretic voiced-state decision, not continuous dry/wet amount
 - [x] Dedicated voiced-path attack/release crossfade
+- [x] Functional Natural, Modern Rap, Trap Lock, and Hook style curves
+- [x] Style-specific correction speed, dead-zone, wet envelope and note commitment
+- [ ] Recorded-vocal calibration of Natural, Modern Rap, Trap Lock, and Hook curves
 - [ ] End-note lock and phrase-aware release
-- [ ] Calibrated Natural, Modern Rap, Trap Lock, and Hook curves
 - [ ] Sample-offset MIDI event segmentation
 
 ## E3 — Time-domain pitch-shifter candidates
@@ -103,9 +109,11 @@ Candidate A remains compiled and tested as the non-period-synchronous baseline.
 - [x] Harmonic quasi-vocal crackle regression with glide and voiced/unvoiced transitions
 - [x] Deterministic five-sample unity-crossing dry island eliminated
 - [x] P0 regression gate requires zero past-output grain writes and zero crackle-threshold violations
-- [ ] Recorded-vocal quality and consonant tests
-- [ ] Plosive, sibilant, and onset transition handling
-- [ ] Mix, output-trim, and external bypass automation smoothing audit
+- [x] Formant Preserve controls source-period versus target-period grain geometry
+- [x] Lightweight realtime consonant/sibilant/onset wet-path protection
+- [x] Five-millisecond Mix, Bypass, and Output Trim automation smoothing
+- [ ] Recorded-vocal quality tests across male/female rap, fry, falsetto and fast articulation
+- [ ] Recorded plosive/sibilant/onset tuning and threshold calibration
 - [ ] Latency/quality optimisation
 - [ ] Blind listening comparison against Candidate A
 
@@ -122,11 +130,25 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 
 ## E5 — Formant and rap protection
 
-- [ ] No-preserve baseline
+- [x] No-preserve / target-period grain-geometry baseline exposed by Formant = 0%
+- [x] Source-period PSOLA formant-retention baseline exposed by Formant = 100%
+- [x] Lightweight consonant/onset protection mask
+- [x] Latency-aligned dry reintegration through the protected wet path
 - [ ] LPC formant candidate
 - [ ] Cepstral formant candidate
-- [ ] Consonant/onset mask
-- [ ] Latency-aligned unvoiced reintegration
+- [ ] Recorded-vocal comparison of formant approaches
+
+## Smart song intelligence
+
+- [ ] Music sidechain bus
+- [ ] Automatic key detection with confidence
+- [ ] Chord timeline / chord-change detection
+- [ ] Chord-aware target-note scoring
+- [ ] Phrase-context and end-note resolution
+- [ ] Pre-analysis Song Map mode
+- [ ] MIDI/reference melody guide
+
+Smart song intelligence is intentionally separate from the current realtime pitch engine. The current build is scale-aware but does not yet infer key/chords or predict the next melody note from a backing track.
 
 ## Cross-platform local build
 
@@ -154,6 +176,7 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 - [x] Candidate B successful three-platform CI run — run 29, commit `a0afc31`
 - [x] P0 crackle-containment gate — run 45, six CTest targets passed on all three platforms
 - [x] Custom GUI gate — run 56, VST3/Standalone plus all six tests passed on all three platforms
+- [x] Active-control DSP gate — run 80, seven CTest targets passed on Windows/macOS/Linux
 - [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified
 - [ ] First published signed production release
 
@@ -161,14 +184,14 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 
 - [ ] Batch render matrix
 - [ ] CSV/JSON metric reports
-- [ ] Blind listening renders
+- [ ] Recorded-vocal blind listening renders
 - [ ] Full callback deadline benchmark under host-like load
 - [ ] GO / ITERATE / STOP decision
 
 ## Current milestone
 
-**Reached:** custom SonRapTune GUI merged to `main` in commit `5f1d6b6fa3ede2ccae01d66e5a69d53cfc0993c1`. The previous generic JUCE editor is gone. SonRapTune now has a dedicated pitch-correction workflow with Input/Key/Scale/Style setup, large Speed and Feel controls, live Pitch Focus telemetry, voice-shape macros, Mix/Output, Bypass, and a 12-note scale map.
+**Reached:** PR #5 merged to `main` as commit `13b8b09684b0a88e570ed0ad836e9ebcd46d054f`. Style, Formant, Consonant and Custom Scale are no longer front-end-only controls. Natural/Modern Rap/Trap Lock/Hook alter correction behaviour, Formant controls PSOLA grain geometry, Consonant Protect reduces wet pitch processing on noisy/onset material, and Custom Scale is editable directly from the 12-note Scale Map. Mix, Bypass and Output Trim now use click-safe per-sample smoothing.
 
-**Validated:** GitHub Actions run 56 compiled VST3 and Standalone, passed all six existing DSP regression targets, created packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64. The packaged Linux Standalone was also launched under a virtual display and visually audited at the default 1040×680 editor size.
+**Validated:** GitHub Actions run 80 compiled VST3 and Standalone, passed all seven CTest targets—including the existing crackle regression and the new `style_protection_smoke`—created platform packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
 
-**Current release status:** engineering alpha for controlled local vocal listening. The GUI foundation is complete enough for real DAW use and iteration; recorded male/female rap tests, consonant/onset protection, parameter-automation smoothing, formant preservation, and E4 phase-locked STFT remain open before any production audio-quality claim.
+**Current release status:** engineering alpha for controlled real-vocal evaluation. All visible GUI controls now have an active parameter/DSP path, but this is not yet a production-quality melodic-rap claim. Recorded-vocal calibration, stronger independent formant processing, phrase/end-note logic, and Smart Auto-Key/chord-aware song intelligence remain open.
