@@ -37,9 +37,13 @@ RuntimeParameters PluginProcessor::snapshotParameters() const noexcept
     RuntimeParameters p;
     p.mode = static_cast<ProductMode>(juce::jlimit(0, 3,
         static_cast<int>(apvts.getRawParameterValue(ParamIds::mode)->load())));
-    p.key = juce::jlimit(0, 11, static_cast<int>(apvts.getRawParameterValue(ParamIds::key)->load()));
+    p.key = juce::jlimit(0, 11,
+        static_cast<int>(apvts.getRawParameterValue(ParamIds::key)->load()));
     p.scale = static_cast<ScaleType>(juce::jlimit(0, 3,
         static_cast<int>(apvts.getRawParameterValue(ParamIds::scale)->load())));
+    p.customMask = static_cast<std::uint16_t>(juce::jlimit(
+        1, 4095,
+        static_cast<int>(apvts.getRawParameterValue(ParamIds::customMask)->load())));
     p.vocalRange = static_cast<VocalRange>(juce::jlimit(0, 3,
         static_cast<int>(apvts.getRawParameterValue(ParamIds::vocalRange)->load())));
     p.tune = apvts.getRawParameterValue(ParamIds::tune)->load() * 0.01f;
