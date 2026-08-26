@@ -39,6 +39,10 @@ private:
     std::vector<float> analysisMono_{};
     std::vector<float> ratio_{};
     std::vector<float> voicedMask_{};
+    float mixSmoothingAlpha_ = 1.0f;
+    float gainSmoothingAlpha_ = 1.0f;
+    float smoothedMix_ = 1.0f;
+    float smoothedGain_ = 1.0f;
 };
 
 } // namespace sonraptune
