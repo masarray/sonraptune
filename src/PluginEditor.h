@@ -127,7 +127,7 @@ private:
     PitchFocusDisplay pitchDisplay_;
     ScaleStrip scaleStrip_;
     juce::TextButton bypass_{"BYPASS"};
-    juce::TooltipWindow tooltip_{this, 550};
+    juce::TooltipWindow tooltip_;
 
     std::unique_ptr<ComboAttachment> vocalRangeAttachment_;
     std::unique_ptr<ComboAttachment> keyAttachment_;
