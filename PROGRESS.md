@@ -33,6 +33,7 @@ Updated: 2026-08-27
 - [x] Custom Scale turns the Scale Map into a clickable 12-note editor
 - [x] Custom scale mask persists as an automatable APVTS parameter
 - [x] All visible controls now have an active parameter/DSP path
+- [x] Auto Key control and resolved-key confidence display
 - [x] Resizable editor with host-safe layout limits
 - [x] Real Standalone render visually audited after CI packaging
 - [x] Windows x64, macOS Universal, and Linux x64 build/package validation — CI run 56
@@ -69,8 +70,8 @@ The GUI intentionally keeps the workflow familiar to experienced pitch-correctio
 - [x] Dedicated voiced-path attack/release crossfade
 - [x] Functional Natural, Modern Rap, Trap Lock, and Hook style curves
 - [x] Style-specific correction speed, dead-zone, wet envelope and note commitment
+- [x] Phrase-end correction hold during wet release
 - [ ] Recorded-vocal calibration of Natural, Modern Rap, Trap Lock, and Hook curves
-- [ ] End-note lock and phrase-aware release
 - [ ] Sample-offset MIDI event segmentation
 
 ## E3 — Time-domain pitch-shifter candidates
@@ -141,14 +142,15 @@ Candidate B remains the active engineering engine. Passing synthetic and harmoni
 ## Smart song intelligence
 
 - [ ] Music sidechain bus
-- [ ] Automatic key detection with confidence
-- [ ] Chord timeline / chord-change detection
+- [x] Automatic key detection with confidence from stable incoming vocal pitch classes
+- [ ] Chord timeline / chord-change detection from backing music
 - [ ] Chord-aware target-note scoring
-- [ ] Phrase-context and end-note resolution
+- [x] Phrase-end correction continuity / end-note hold
+- [ ] Broader phrase-context melodic target scoring
 - [ ] Pre-analysis Song Map mode
 - [ ] MIDI/reference melody guide
 
-Smart song intelligence is intentionally separate from the current realtime pitch engine. The current build is scale-aware but does not yet infer key/chords or predict the next melody note from a backing track.
+Smart Song Intelligence v1 is intentionally conservative. Auto Key is causal, allocation-free, and uses decaying pitch-class evidence plus hysteresis; manual Key/Scale remains the fallback until the estimate is ready. The current implementation listens to the vocal melody only and does not claim chord-by-chord backing-track intelligence.
 
 ## Cross-platform local build
 
@@ -162,36 +164,45 @@ Smart song intelligence is intentionally separate from the current realtime pitc
 - [x] Linux `build-linux.sh`
 - [x] Linux VST3 + Standalone tar.gz
 - [x] Linux DEB installer
-- [ ] Developer ID signing and notarisation for public macOS distribution
-- [ ] Windows Authenticode signing
+- [x] Public distribution policy: Windows Authenticode is intentionally not required
+- [x] Public distribution policy: Apple Developer ID/notarization is intentionally not required
+
+SonRapTune is a free project. Paid platform-signing programs are not treated as engineering completion gates. Windows SmartScreen and macOS Gatekeeper prompts are documented as expected platform behaviour for the supported distribution model.
 
 ## Automation
 
 - [x] Build/test workflow for Windows, macOS, and Linux
 - [x] Package upload as workflow artifacts
 - [x] Tag-driven `v*` release workflow
+- [x] `release/v*` public-beta workflow path
 - [x] Manual release dispatch with tag input
 - [x] GitHub Release publishing via official `gh` CLI
+- [x] Release-time SHA-256 manifest generation
 - [x] First successful three-platform CI run — run 15, commit `3f52fce`
 - [x] Candidate B successful three-platform CI run — run 29, commit `a0afc31`
 - [x] P0 crackle-containment gate — run 45, six CTest targets passed on all three platforms
 - [x] Custom GUI gate — run 56, VST3/Standalone plus all six tests passed on all three platforms
 - [x] Active-control DSP gate — run 80, seven CTest targets passed on Windows/macOS/Linux
+- [x] Smart Song Intelligence v1 gate — run 106, eight CTest targets passed on Windows/macOS/Linux
 - [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified
-- [ ] First published signed production release
+- [ ] First public GitHub prerelease published
 
-## E6 — Bake-off and gate
+## E6 — Bake-off and stable-quality gate
 
 - [ ] Batch render matrix
 - [ ] CSV/JSON metric reports
 - [ ] Recorded-vocal blind listening renders
 - [ ] Full callback deadline benchmark under host-like load
+- [ ] Recorded male/female melodic-rap corpus validation
+- [ ] DAW compatibility matrix
 - [ ] GO / ITERATE / STOP decision
+
+Signing/notarization is not part of the stable-quality gate. The stable gate is audio quality, reliability, realtime performance, compatibility, and reproducible validation.
 
 ## Current milestone
 
-**Reached:** PR #5 merged to `main` as commit `13b8b09684b0a88e570ed0ad836e9ebcd46d054f`. Style, Formant, Consonant and Custom Scale are no longer front-end-only controls. Natural/Modern Rap/Trap Lock/Hook alter correction behaviour, Formant controls PSOLA grain geometry, Consonant Protect reduces wet pitch processing on noisy/onset material, and Custom Scale is editable directly from the 12-note Scale Map. Mix, Bypass and Output Trim now use click-safe per-sample smoothing.
+**Reached:** PR #6 was squash-merged to `main` as commit `30c95f3901fdf3fc8b7521602c53a196704af33e`. Smart Song Intelligence v1 adds causal Auto Key major/minor inference with confidence and hysteresis, manual fallback, resolved-key telemetry/GUI display, Scale Map synchronization, and phrase-end correction hold. Version is now 0.2.0.
 
-**Validated:** GitHub Actions run 80 compiled VST3 and Standalone, passed all seven CTest targets—including the existing crackle regression and the new `style_protection_smoke`—created platform packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
+**Validated:** GitHub Actions run 106 compiled VST3 and Standalone, passed all eight CTest targets—including `crackle_smoke`, `style_protection_smoke`, and `song_intelligence_smoke`—created platform packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
 
-**Current release status:** engineering alpha for controlled real-vocal evaluation. All visible GUI controls now have an active parameter/DSP path, but this is not yet a production-quality melodic-rap claim. Recorded-vocal calibration, stronger independent formant processing, phrase/end-note logic, and Smart Auto-Key/chord-aware song intelligence remain open.
+**Current release status:** v0.2.0 Public Beta is the current free public-release target. All visible GUI controls have an active parameter/DSP path; Auto Key v1 is active; paid code-signing/notarization is intentionally outside the project gate. Remaining work toward a stable audio-quality claim is recorded-vocal calibration, stronger independent formant processing, backing-track/chord intelligence, compatibility coverage, and listening validation.
