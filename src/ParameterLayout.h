@@ -9,6 +9,7 @@ inline constexpr auto mode = "mode";
 inline constexpr auto key = "key";
 inline constexpr auto scale = "scale";
 inline constexpr auto customMask = "custom_scale_mask";
+inline constexpr auto autoKey = "auto_key";
 inline constexpr auto vocalRange = "vocal_range";
 inline constexpr auto tune = "tune";
 inline constexpr auto speed = "speed_ms";
