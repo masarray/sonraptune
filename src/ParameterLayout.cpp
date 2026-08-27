@@ -18,6 +18,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         juce::StringArray{"Major", "Natural Minor", "Chromatic", "Custom"}, 1));
     p.add(std::make_unique<I>(juce::ParameterID{ParamIds::customMask, 1},
         "Custom Scale Mask", 1, 4095, 4095));
+    p.add(std::make_unique<B>(juce::ParameterID{ParamIds::autoKey, 1},
+        "Auto Key", false));
     p.add(std::make_unique<C>(juce::ParameterID{ParamIds::vocalRange, 1}, "Vocal Range",
         juce::StringArray{"Auto", "Low", "Mid", "High"}, 0));
 
