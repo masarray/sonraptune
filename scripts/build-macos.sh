@@ -20,7 +20,8 @@ if [[ "$CLEAN" == "1" ]]; then
 fi
 
 if [[ -n "${SONRAPTUNE_VERSION:-}" ]]; then
-  VERSION="${SONRAPTUNE_VERSION#v}"
+  RAW_VERSION="${SONRAPTUNE_VERSION#release/}"
+  VERSION="${RAW_VERSION#v}"
 else
   VERSION="$(sed -nE 's/.*project\(SonRapTune VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' "$ROOT/CMakeLists.txt" | head -n1)"
 fi
