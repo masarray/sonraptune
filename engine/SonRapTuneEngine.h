@@ -3,6 +3,7 @@
 #include "engine/CommonTypes.h"
 #include "engine/analysis/YinCandidateDetector.h"
 #include "engine/tracking/CausalPitchTracker.h"
+#include "engine/intelligence/SongKeyEstimator.h"
 #include "engine/mapping/ScaleMapper.h"
 #include "engine/correction/CorrectionTrajectory.h"
 #include "engine/protection/ConsonantProtection.h"
@@ -31,6 +32,7 @@ private:
     RuntimeParameters parameters_{};
     YinCandidateDetector detector_{};
     CausalPitchTracker tracker_{};
+    SongKeyEstimator songKeyEstimator_{};
     ScaleMapper mapper_{};
     CorrectionTrajectory trajectory_{};
     ConsonantProtection consonantProtection_{};
@@ -43,6 +45,9 @@ private:
     float gainSmoothingAlpha_ = 1.0f;
     float smoothedMix_ = 1.0f;
     float smoothedGain_ = 1.0f;
+    int resolvedKey_ = 0;
+    ScaleType resolvedScale_ = ScaleType::naturalMinor;
+    bool resolvedKeyInitialized_ = false;
 };
 
 } // namespace sonraptune
