@@ -56,6 +56,11 @@ struct PitchFrame {
     float targetMidi = -1.0f;
     float correctionCents = 0.0f;
     PitchState state = PitchState::silence;
+    int resolvedKey = 0;
+    ScaleType resolvedScale = ScaleType::naturalMinor;
+    float keyConfidence = 0.0f;
+    bool keyEstimateReady = false;
+    bool autoKeyActive = false;
 };
 
 struct RuntimeParameters {
@@ -63,6 +68,7 @@ struct RuntimeParameters {
     int key = 0;
     ScaleType scale = ScaleType::naturalMinor;
     std::uint16_t customMask = 0x0FFFu;
+    bool autoKey = false;
     VocalRange vocalRange = VocalRange::automatic;
     float tune = 0.85f;
     float speedMs = 18.0f;

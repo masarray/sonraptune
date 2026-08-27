@@ -24,6 +24,7 @@ void SonRapTuneEngine::prepare(const PrepareSpec& spec)
     ratio_.assign(static_cast<std::size_t>(spec_.maxBlockSize), 1.0f);
     voicedMask_.assign(static_cast<std::size_t>(spec_.maxBlockSize), 0.0f);
     detector_.prepare(spec_.sampleRate);
+    songKeyEstimator_.prepare(spec_.sampleRate);
     trajectory_.prepare(spec_.sampleRate);
     consonantProtection_.prepare(spec_.sampleRate);
     shifter_.prepare(spec_.sampleRate, spec_.maxBlockSize, spec_.channels);
@@ -36,11 +37,15 @@ void SonRapTuneEngine::reset() noexcept
 {
     detector_.reset();
     tracker_.reset();
+    songKeyEstimator_.reset();
     mapper_.reset();
     trajectory_.reset();
     consonantProtection_.reset();
     shifter_.reset();
     latestFrame_ = {};
+    resolvedKey_ = std::clamp(parameters_.key, 0, 11);
+    resolvedScale_ = parameters_.scale;
+    resolvedKeyInitialized_ = false;
     smoothedMix_ = parameters_.bypass
         ? 0.0f
         : std::clamp(parameters_.mix, 0.0f, 1.0f);
@@ -68,8 +73,27 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
     PitchAnalysis analysis;
     if (detector_.push(analysisMono_.data(), numSamples, parameters_.vocalRange, analysis)) {
         const auto tracked = tracker_.update(analysis, parameters_.stability);
-        const float target = mapper_.map(tracked.midi, analysis.onset, parameters_);
-        trajectory_.setFrame(tracked, target, parameters_);
+        const auto keyEstimate = songKeyEstimator_.update(tracked, analysis.sampleTime);
+
+        RuntimeParameters effectiveParameters = parameters_;
+        effectiveParameters.key = std::clamp(parameters_.key, 0, 11);
+        if (parameters_.autoKey && keyEstimate.ready) {
+            effectiveParameters.key = keyEstimate.key;
+            effectiveParameters.scale = keyEstimate.scale;
+        }
+
+        if (!resolvedKeyInitialized_
+            || effectiveParameters.key != resolvedKey_
+            || effectiveParameters.scale != resolvedScale_) {
+            resolvedKey_ = effectiveParameters.key;
+            resolvedScale_ = effectiveParameters.scale;
+            resolvedKeyInitialized_ = true;
+            mapper_.reset();
+            mapper_.setMidiNotes(activeMidiNotes);
+        }
+
+        const float target = mapper_.map(tracked.midi, analysis.onset, effectiveParameters);
+        trajectory_.setFrame(tracked, target, effectiveParameters);
         latestFrame_.sampleTime = analysis.sampleTime;
         latestFrame_.detectedHz = tracked.hz;
         latestFrame_.detectedMidi = tracked.midi;
@@ -78,6 +102,11 @@ void SonRapTuneEngine::process(float* const* channels, int numChannels, int numS
         latestFrame_.targetMidi = target;
         latestFrame_.correctionCents = trajectory_.correctionCents();
         latestFrame_.state = tracked.state;
+        latestFrame_.resolvedKey = resolvedKey_;
+        latestFrame_.resolvedScale = resolvedScale_;
+        latestFrame_.keyConfidence = keyEstimate.confidence;
+        latestFrame_.keyEstimateReady = keyEstimate.ready;
+        latestFrame_.autoKeyActive = parameters_.autoKey;
     }
 
     trajectory_.render(ratio_.data(), voicedMask_.data(), numSamples, parameters_);

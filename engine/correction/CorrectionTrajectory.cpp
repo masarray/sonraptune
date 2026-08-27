@@ -62,6 +62,15 @@ void CorrectionTrajectory::setFrame(const TrackedPitch& tracked,
     targetMask_ = stableVoiced ? 1.0f : 0.0f;
 
     if (!stableVoiced) {
+        // During an unvoiced/phrase-release boundary, let the wet envelope
+        // decay while holding the last correction ratio. Driving the ratio
+        // back toward unity while the wet path is still audible creates a
+        // small end-note pitch scoop. Silence/onset starts a fresh phrase and
+        // therefore resets the target correction normally.
+        if (tracked.state == PitchState::unvoiced
+            || tracked.state == PitchState::phraseRelease) {
+            return;
+        }
         targetCents_ = 0.0f;
         return;
     }
