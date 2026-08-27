@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SonRapTune VERSION 0.1.0 LANGUAGES C CXX)
+project(SonRapTune VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,6 +14,7 @@ option(SONRAPTUNE_BUILD_TESTS "Build deterministic P0/E3 tools" ON)
 add_library(SonRapTuneCore STATIC
     engine/analysis/YinCandidateDetector.cpp
     engine/tracking/CausalPitchTracker.cpp
+    engine/intelligence/SongKeyEstimator.cpp
     engine/mapping/ScaleMapper.cpp
     engine/correction/CorrectionTrajectory.cpp
     engine/protection/ConsonantProtection.cpp
@@ -52,6 +53,9 @@ if(SONRAPTUNE_BUILD_TESTS)
     add_executable(sonraptune_style_protection_smoke tools/style_protection_smoke.cpp)
     target_link_libraries(sonraptune_style_protection_smoke PRIVATE SonRapTuneCore)
 
+    add_executable(sonraptune_song_intelligence_smoke tools/song_intelligence_smoke.cpp)
+    target_link_libraries(sonraptune_song_intelligence_smoke PRIVATE SonRapTuneCore)
+
     add_test(NAME detector_benchmark COMMAND sonraptune_detector_benchmark)
     add_test(NAME core_smoke COMMAND sonraptune_core_smoke)
     add_test(NAME realtime_contract_smoke COMMAND sonraptune_realtime_contract_smoke)
@@ -59,6 +63,7 @@ if(SONRAPTUNE_BUILD_TESTS)
     add_test(NAME psola_smoke COMMAND sonraptune_psola_smoke)
     add_test(NAME crackle_smoke COMMAND sonraptune_crackle_smoke)
     add_test(NAME style_protection_smoke COMMAND sonraptune_style_protection_smoke)
+    add_test(NAME song_intelligence_smoke COMMAND sonraptune_song_intelligence_smoke)
 endif()
 
 if(SONRAPTUNE_BUILD_PLUGIN)
