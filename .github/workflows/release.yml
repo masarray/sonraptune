@@ -93,6 +93,12 @@ jobs:
           pattern: release-*
           merge-multiple: true
           path: release-assets
+      - name: Generate SHA-256 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
       - name: Create or update release
         shell: bash
         env:
