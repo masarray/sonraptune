@@ -135,8 +135,11 @@ private:
 
     PitchFocusDisplay pitchDisplay_;
     ScaleStrip scaleStrip_;
+    juce::TextButton autoKey_{"AUTO KEY"};
     juce::TextButton bypass_{"BYPASS"};
     juce::TooltipWindow tooltip_;
+    PitchFrame latestFrame_{};
+    bool hasLatestFrame_ = false;
 
     std::unique_ptr<ComboAttachment> vocalRangeAttachment_;
     std::unique_ptr<ComboAttachment> keyAttachment_;
@@ -151,6 +154,7 @@ private:
     std::unique_ptr<SliderAttachment> consonantAttachment_;
     std::unique_ptr<SliderAttachment> mixAttachment_;
     std::unique_ptr<SliderAttachment> outputAttachment_;
+    std::unique_ptr<ButtonAttachment> autoKeyAttachment_;
     std::unique_ptr<ButtonAttachment> bypassAttachment_;
 };
 
