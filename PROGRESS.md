@@ -185,7 +185,7 @@ SonRapTune is a free project. Paid platform-signing programs are not treated as 
 - [x] Active-control DSP gate — run 80, seven CTest targets passed on Windows/macOS/Linux
 - [x] Smart Song Intelligence v1 gate — run 106, eight CTest targets passed on Windows/macOS/Linux
 - [x] Windows, macOS, and Linux VST3/Standalone installers and portable artifacts verified
-- [ ] First public GitHub prerelease published
+- [x] First public GitHub prerelease published — `v0.2.0` Public Beta
 
 ## E6 — Bake-off and stable-quality gate
 
@@ -203,6 +203,6 @@ Signing/notarization is not part of the stable-quality gate. The stable gate is 
 
 **Reached:** PR #6 was squash-merged to `main` as commit `30c95f3901fdf3fc8b7521602c53a196704af33e`. Smart Song Intelligence v1 adds causal Auto Key major/minor inference with confidence and hysteresis, manual fallback, resolved-key telemetry/GUI display, Scale Map synchronization, and phrase-end correction hold. Version is now 0.2.0.
 
-**Validated:** GitHub Actions run 106 compiled VST3 and Standalone, passed all eight CTest targets—including `crackle_smoke`, `style_protection_smoke`, and `song_intelligence_smoke`—created platform packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64.
+**Validated:** GitHub Actions run 106 compiled VST3 and Standalone, passed all eight CTest targets—including `crackle_smoke`, `style_protection_smoke`, and `song_intelligence_smoke`—created platform packages, and uploaded artifacts on Windows x64, macOS Universal, and Linux x64. The dedicated release workflow then rebuilt and packaged Windows, macOS, and Linux successfully before publishing.
 
-**Current release status:** v0.2.0 Public Beta is the current free public-release target. All visible GUI controls have an active parameter/DSP path; Auto Key v1 is active; paid code-signing/notarization is intentionally outside the project gate. Remaining work toward a stable audio-quality claim is recorded-vocal calibration, stronger independent formant processing, backing-track/chord intelligence, compatibility coverage, and listening validation.
+**Current release status:** `v0.2.0` **Public Beta is published publicly on GitHub Releases** with Windows Setup/portable ZIP, macOS Universal PKG/ZIP, Linux DEB/tar.gz, and `SHA256SUMS.txt`. All visible GUI controls have an active parameter/DSP path; Auto Key v1 is active; paid code-signing/notarization is intentionally outside the project gate. Remaining work toward a stable audio-quality claim is recorded-vocal calibration, stronger independent formant processing, backing-track/chord intelligence, compatibility coverage, and listening validation.
