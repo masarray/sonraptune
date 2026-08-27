@@ -18,7 +18,8 @@ if ($Clean) {
 
 $cmakeFile = Get-Content (Join-Path $Root 'CMakeLists.txt') -Raw
 if ($env:SONRAPTUNE_VERSION) {
-    $Version = $env:SONRAPTUNE_VERSION.TrimStart('v')
+    $RawVersion = $env:SONRAPTUNE_VERSION -replace '^release/', ''
+    $Version = $RawVersion.TrimStart('v')
 } elseif ($cmakeFile -match 'project\(SonRapTune VERSION ([0-9]+\.[0-9]+\.[0-9]+)') {
     $Version = $Matches[1]
 } else {
