@@ -4,6 +4,14 @@
 
 SonRapTune is developed independently in this repository. It does not share source-tree ownership with the production `askp-vst` repository.
 
+## Project philosophy
+
+SonRapTune is distributed **free of charge** and developed with its source publicly visible. Project effort is focused on DSP functionality, audio quality, realtime stability, reproducible builds, and a workflow that is useful to musicians—not on paid platform-signing programs, subscriptions, DRM, or commercial activation infrastructure.
+
+Windows Authenticode signing and Apple Developer ID/notarization are **not release gates for this project by design**. Official binaries are built through this repository's GitHub Actions workflows. Release assets include SHA-256 checksums so users can verify downloaded files.
+
+> Note: this repository does not yet contain a formal open-source license file. Source visibility and free-of-charge distribution do not by themselves define redistribution/modification rights; a software license can be selected separately without blocking the free public beta.
+
 ## v0.2.0 Public Beta
 
 SonRapTune v0.2.0 is a public engineering beta focused on real-time rap/melodic-rap pitch correction. It includes:
@@ -32,11 +40,11 @@ This release is a **public beta**, not a final production-quality claim. Synthet
 
 ### Windows
 
-Use the Setup EXE, or copy the VST3 from the portable ZIP to your system VST3 folder. The current public beta is **not Authenticode signed**, so Windows may show a SmartScreen warning.
+Use the Setup EXE, or copy the VST3 from the portable ZIP to your system VST3 folder. SonRapTune intentionally ships without paid Authenticode signing, so Windows may show a SmartScreen warning. Verify the file against `SHA256SUMS.txt` from the official GitHub Release when desired.
 
 ### macOS
 
-The release contains a Universal VST3 + Standalone ZIP and PKG. Builds are currently **ad-hoc signed and not Apple-notarized**; Gatekeeper may require explicit user approval. Developer ID signing/notarisation is required before a frictionless production distribution.
+The release contains a Universal VST3 + Standalone ZIP and PKG. Builds are ad-hoc signed and intentionally not Apple-notarized, so Gatekeeper may require explicit user approval. This is the supported free-project distribution model rather than an unfinished commercial-signing task.
 
 ### Linux
 
@@ -84,9 +92,9 @@ The plugin fetches pinned JUCE 8.0.14 and stores state under `SONRAPTUNE_STATE`.
 
 - `Build and Test` runs Windows x64, macOS Universal, and Linux x64 builds on feature pushes, pull requests, and `main`.
 - The test suite includes detector, core, realtime-contract, Candidate A, PSOLA, crackle, Style/Formant/Consonant, and Smart Song Intelligence regression gates.
-- `Release Installers` publishes Windows EXE/ZIP, macOS PKG/ZIP, and Linux DEB/tar.gz assets to GitHub Releases.
+- `Release Installers` publishes Windows EXE/ZIP, macOS PKG/ZIP, Linux DEB/tar.gz, and a `SHA256SUMS.txt` verification manifest to GitHub Releases.
 
-See [`PROGRESS.md`](PROGRESS.md) for the implementation checklist and remaining production gates.
+See [`PROGRESS.md`](PROGRESS.md) for the implementation checklist and remaining audio-quality gates.
 
 ## Realtime safety contract
 
