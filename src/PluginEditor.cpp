@@ -418,9 +418,13 @@ PluginEditor::PluginEditor(PluginProcessor& processor)
     autoKey_.setTooltip("Estimate major/minor key from stable incoming vocal pitches. Manual Key/Scale remain the learning fallback.");
     bypass_.setTooltip("Smoothly bypass SonRapTune while keeping latency alignment.");
 
-    for (auto* component : {static_cast<juce::Component*>(&vocalRange_), &key_, &scale_, &mode_,
-                            &speed_, &feel_, &tune_, &stability_, &formant_, &consonant_,
-                            &mix_, &output_, &pitchDisplay_, &scaleStrip_, &autoKey_, &bypass_})
+    const std::array<juce::Component*, 16> components{
+        &vocalRange_, &key_, &scale_, &mode_,
+        &speed_, &feel_, &tune_, &stability_,
+        &formant_, &consonant_, &mix_, &output_,
+        &pitchDisplay_, &scaleStrip_, &autoKey_, &bypass_
+    };
+    for (auto* component : components)
         addAndMakeVisible(*component);
 
     auto& state = processor_.apvts;
